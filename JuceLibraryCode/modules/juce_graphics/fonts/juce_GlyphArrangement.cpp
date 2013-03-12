@@ -55,30 +55,33 @@ PositionedGlyph& PositionedGlyph::operator= (const PositionedGlyph& other)
     return *this;
 }
 
-static inline void drawGlyphWithFont (const Graphics& g, int glyph, const Font& font, const AffineTransform& t)
-{
-    LowLevelGraphicsContext& context = g.getInternalContext();
-    context.setFont (font);
-    context.drawGlyph (glyph, t);
-}
-
 void PositionedGlyph::draw (const Graphics& g) const
 {
     if (! isWhitespace())
-        drawGlyphWithFont (g, glyph, font, AffineTransform::translation (x, y));
+    {
+        LowLevelGraphicsContext& context = g.getInternalContext();
+        context.setFont (font);
+        context.drawGlyph (glyph, AffineTransform::translation (x, y));
+    }
 }
 
 void PositionedGlyph::draw (const Graphics& g, const AffineTransform& transform) const
 {
     if (! isWhitespace())
-        drawGlyphWithFont (g, glyph, font, AffineTransform::translation (x, y).followedBy (transform));
+    {
+        LowLevelGraphicsContext& context = g.getInternalContext();
+        context.setFont (font);
+        context.drawGlyph (glyph, AffineTransform::translation (x, y).followedBy (transform));
+    }
 }
 
 void PositionedGlyph::createPath (Path& path) const
 {
     if (! isWhitespace())
     {
-        if (Typeface* const t = font.getTypeface())
+        Typeface* const t = font.getTypeface();
+
+        if (t != nullptr)
         {
             Path p;
             t->getOutlineForGlyph (glyph, p);
@@ -93,7 +96,9 @@ bool PositionedGlyph::hitTest (float px, float py) const
 {
     if (getBounds().contains (px, py) && ! isWhitespace())
     {
-        if (Typeface* const t = font.getTypeface())
+        Typeface* const t = font.getTypeface();
+
+        if (t != nullptr)
         {
             Path p;
             t->getOutlineForGlyph (glyph, p);
@@ -434,10 +439,12 @@ void GlyphArrangement::addFittedText (const Font& f,
 
             float lineY = y;
             float widthPerLine = lineWidth / numLines;
+            int lastLineStartIndex = 0;
 
             for (int line = 0; line < numLines; ++line)
             {
                 int i = startIndex;
+                lastLineStartIndex = i;
                 float lineStartX = glyphs.getReference (startIndex).getLeft();
 
                 if (line == numLines - 1)
@@ -473,7 +480,7 @@ void GlyphArrangement::addFittedText (const Font& f,
                                     // can't find a suitable break, so try looking backwards..
                                     i = searchStartIndex;
 
-                                    for (int back = 1; back < jmin (7, i - startIndex - 1); ++back)
+                                    for (int back = 1; back < jmin (5, i - startIndex - 1); ++back)
                                     {
                                         if (glyphs.getReference (i - back).isWhitespace()
                                              || glyphs.getReference (i - back).getCharacter() == '-')
@@ -620,16 +627,25 @@ void GlyphArrangement::justifyGlyphs (const int startIndex, const int num,
     {
         const Rectangle<float> bb (getBoundingBox (startIndex, num, ! justification.testFlags (Justification::horizontallyJustified
                                                                                                 | Justification::horizontallyCentred)));
-        float deltaX = 0.0f, deltaY = 0.0f;
+        float deltaX = 0.0f;
 
-        if (justification.testFlags (Justification::horizontallyJustified))     deltaX = x - bb.getX();
-        else if (justification.testFlags (Justification::horizontallyCentred))  deltaX = x + (width - bb.getWidth()) * 0.5f - bb.getX();
-        else if (justification.testFlags (Justification::right))                deltaX = x + width - bb.getRight();
-        else                                                                    deltaX = x - bb.getX();
+        if (justification.testFlags (Justification::horizontallyJustified))
+            deltaX = x - bb.getX();
+        else if (justification.testFlags (Justification::horizontallyCentred))
+            deltaX = x + (width - bb.getWidth()) * 0.5f - bb.getX();
+        else if (justification.testFlags (Justification::right))
+            deltaX = (x + width) - bb.getRight();
+        else
+            deltaX = x - bb.getX();
 
-        if (justification.testFlags (Justification::top))                       deltaY = y - bb.getY();
-        else if (justification.testFlags (Justification::bottom))               deltaY = y + height - bb.getBottom();
-        else                                                                    deltaY = y + (height - bb.getHeight()) * 0.5f - bb.getY();
+        float deltaY = 0.0f;
+
+        if (justification.testFlags (Justification::top))
+            deltaY = y - bb.getY();
+        else if (justification.testFlags (Justification::bottom))
+            deltaY = (y + height) - bb.getBottom();
+        else
+            deltaY = y + (height - bb.getHeight()) * 0.5f - bb.getY();
 
         moveRangeOfGlyphs (startIndex, num, deltaX, deltaY);
 
@@ -704,21 +720,6 @@ void GlyphArrangement::spreadOutLine (const int start, const int num, const floa
 }
 
 //==============================================================================
-inline void GlyphArrangement::drawGlyphUnderline (const Graphics& g, const PositionedGlyph& pg,
-                                                  const int i, const AffineTransform& transform) const
-{
-    const float lineThickness = (pg.font.getDescent()) * 0.3f;
-
-    float nextX = pg.x + pg.w;
-
-    if (i < glyphs.size() - 1 && glyphs.getReference (i + 1).y == pg.y)
-        nextX = glyphs.getReference (i + 1).x;
-
-    Path p;
-    p.addRectangle (pg.x, pg.y + lineThickness * 2.0f, nextX - pg.x, lineThickness);
-    g.fillPath (p, transform);
-}
-
 void GlyphArrangement::draw (const Graphics& g) const
 {
     for (int i = 0; i < glyphs.size(); ++i)
@@ -726,7 +727,17 @@ void GlyphArrangement::draw (const Graphics& g) const
         const PositionedGlyph& pg = glyphs.getReference(i);
 
         if (pg.font.isUnderlined())
-            drawGlyphUnderline (g, pg, i, AffineTransform::identity);
+        {
+            const float lineThickness = (pg.font.getDescent()) * 0.3f;
+
+            float nextX = pg.x + pg.w;
+
+            if (i < glyphs.size() - 1 && glyphs.getReference (i + 1).y == pg.y)
+                nextX = glyphs.getReference (i + 1).x;
+
+            g.fillRect (pg.x, pg.y + lineThickness * 2.0f,
+                        nextX - pg.x, lineThickness);
+        }
 
         pg.draw (g);
     }
@@ -739,7 +750,19 @@ void GlyphArrangement::draw (const Graphics& g, const AffineTransform& transform
         const PositionedGlyph& pg = glyphs.getReference(i);
 
         if (pg.font.isUnderlined())
-            drawGlyphUnderline (g, pg, i, transform);
+        {
+            const float lineThickness = (pg.font.getDescent()) * 0.3f;
+
+            float nextX = pg.x + pg.w;
+
+            if (i < glyphs.size() - 1 && glyphs.getReference (i + 1).y == pg.y)
+                nextX = glyphs.getReference (i + 1).x;
+
+            Path p;
+            p.addLineSegment (Line<float> (pg.x,  pg.y + lineThickness * 2.0f,
+                                           nextX, pg.y + lineThickness * 2.0f), lineThickness);
+            g.fillPath (p, transform);
+        }
 
         pg.draw (g, transform);
     }

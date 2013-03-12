@@ -176,7 +176,7 @@ public:
 private:
     TabbedButtonBar& owner;
 
-    JUCE_DECLARE_NON_COPYABLE (BehindFrontTabComp)
+    JUCE_DECLARE_NON_COPYABLE (BehindFrontTabComp);
 };
 
 
@@ -259,14 +259,13 @@ void TabbedButtonBar::addTab (const String& tabName,
 
 void TabbedButtonBar::setTabName (const int tabIndex, const String& newName)
 {
-    if (TabInfo* const tab = tabs [tabIndex])
+    TabInfo* const tab = tabs [tabIndex];
+
+    if (tab != nullptr && tab->name != newName)
     {
-        if (tab->name != newName)
-        {
-            tab->name = newName;
-            tab->button->setButtonText (newName);
-            resized();
-        }
+        tab->name = newName;
+        tab->button->setButtonText (newName);
+        resized();
     }
 }
 
@@ -440,7 +439,9 @@ void TabbedButtonBar::resized()
 
     for (int i = 0; i < tabs.size(); ++i)
     {
-        if (TabBarButton* const tb = getTabButton (i))
+        TabBarButton* const tb = getTabButton (i);
+
+        if (tb != nullptr)
         {
             const int bestLength = roundToInt (scale * tb->getBestTabLength (depth));
 
@@ -485,13 +486,12 @@ Colour TabbedButtonBar::getTabBackgroundColour (const int tabIndex)
 
 void TabbedButtonBar::setTabBackgroundColour (const int tabIndex, const Colour& newColour)
 {
-    if (TabInfo* const tab = tabs [tabIndex])
+    TabInfo* const tab = tabs [tabIndex];
+
+    if (tab != nullptr && tab->colour != newColour)
     {
-        if (tab->colour != newColour)
-        {
-            tab->colour = newColour;
-            repaint();
-        }
+        tab->colour = newColour;
+        repaint();
     }
 }
 

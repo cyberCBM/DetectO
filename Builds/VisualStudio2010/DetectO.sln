@@ -1,0 +1,19 @@
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{D9E020C6-9F35-781F-176A-B14A70D1B4BE}") = "DetectO", "DetectO.vcxproj", "{3EE6F176-5545-08BE-6DEE-727951EC6785}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3EE6F176-5545-08BE-6DEE-727951EC6785}.Debug|Win32.ActiveCfg = Debug|Win32
+		{3EE6F176-5545-08BE-6DEE-727951EC6785}.Debug|Win32.Build.0 = Debug|Win32
+		{3EE6F176-5545-08BE-6DEE-727951EC6785}.Release|Win32.ActiveCfg = Release|Win32
+		{3EE6F176-5545-08BE-6DEE-727951EC6785}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

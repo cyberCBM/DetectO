@@ -130,29 +130,21 @@ String File::parseAbsolutePath (const String& p)
             // expand a name of type "~dave/abc"
             const String userName (path.substring (1).upToFirstOccurrenceOf ("/", false, false));
 
-            if (struct passwd* const pw = getpwnam (userName.toUTF8()))
+            struct passwd* const pw = getpwnam (userName.toUTF8());
+            if (pw != nullptr)
                 path = addTrailingSeparator (pw->pw_dir) + path.fromFirstOccurrenceOf ("/", false, false);
         }
     }
     else if (! path.startsWithChar (separator))
     {
-       #if JUCE_DEBUG || JUCE_LOG_ASSERTIONS
-        if (! (path.startsWith ("./") || path.startsWith ("../")))
-        {
-            /*  When you supply a raw string to the File object constructor, it must be an absolute path.
-                If you're trying to parse a string that may be either a relative path or an absolute path,
-                you MUST provide a context against which the partial path can be evaluated - you can do
-                this by simply using File::getChildFile() instead of the File constructor. E.g. saying
-                "File::getCurrentWorkingDirectory().getChildFile (myUnknownPath)" would return an absolute
-                path if that's what was supplied, or would evaluate a partial path relative to the CWD.
-            */
-            jassertfalse;
-
-           #if JUCE_LOG_ASSERTIONS
-            Logger::writeToLog ("Illegal absolute path: " + path);
-           #endif
-        }
-       #endif
+        /*  When you supply a raw string to the File object constructor, it must be an absolute path.
+            If you're trying to parse a string that may be either a relative path or an absolute path,
+            you MUST provide a context against which the partial path can be evaluated - you can do
+            this by simply using File::getChildFile() instead of the File constructor. E.g. saying
+            "File::getCurrentWorkingDirectory().getChildFile (myUnknownPath)" would return an absolute
+            path if that's what was supplied, or would evaluate a partial path relative to the CWD.
+        */
+        jassert (path.startsWith ("./") || path.startsWith ("../")); // (assume that a path "./xyz" is deliberately intended to be relative to the CWD)
 
         return File::getCurrentWorkingDirectory().getChildFile (path).getFullPathName();
     }
@@ -286,11 +278,10 @@ String File::getPathUpToLastSlash() const
 
     if (lastSlash > 0)
         return fullPath.substring (0, lastSlash);
-
-    if (lastSlash == 0)
+    else if (lastSlash == 0)
         return separatorString;
-
-    return fullPath;
+    else
+        return fullPath;
 }
 
 File File::getParentDirectory() const
@@ -313,8 +304,8 @@ String File::getFileNameWithoutExtension() const
 
     if (lastDot > lastSlash)
         return fullPath.substring (lastSlash, lastDot);
-
-    return fullPath.substring (lastSlash);
+    else
+        return fullPath.substring (lastSlash);
 }
 
 bool File::isAChildOf (const File& potentialParent) const

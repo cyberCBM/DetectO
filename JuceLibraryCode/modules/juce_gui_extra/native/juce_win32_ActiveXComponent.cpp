@@ -54,7 +54,7 @@ namespace ActiveXHelpers
     class JuceOleInPlaceFrame   : public ComBaseClassHelper <IOleInPlaceFrame>
     {
     public:
-        JuceOleInPlaceFrame (HWND hwnd)   : window (hwnd) {}
+        JuceOleInPlaceFrame (HWND window_)   : window (window_) {}
 
         JUCE_COMRESULT GetWindow (HWND* lphwnd)                      { *lphwnd = window; return S_OK; }
         JUCE_COMRESULT ContextSensitiveHelp (BOOL)                   { return E_NOTIMPL; }
@@ -77,8 +77,8 @@ namespace ActiveXHelpers
     class JuceIOleInPlaceSite   : public ComBaseClassHelper <IOleInPlaceSite>
     {
     public:
-        JuceIOleInPlaceSite (HWND hwnd)
-            : window (hwnd),
+        JuceIOleInPlaceSite (HWND window_)
+            : window (window_),
               frame (new JuceOleInPlaceFrame (window))
         {}
 
@@ -161,9 +161,11 @@ namespace ActiveXHelpers
     HWND getHWND (const ActiveXControlComponent* const component)
     {
         HWND hwnd = 0;
-        const IID iid = IID_IOleWindow;
 
-        if (IOleWindow* const window = (IOleWindow*) component->queryInterface (&iid))
+        const IID iid = IID_IOleWindow;
+        IOleWindow* const window = (IOleWindow*) component->queryInterface (&iid);
+
+        if (window != nullptr)
         {
             window->GetWindow (&hwnd);
             window->Release();
@@ -281,7 +283,9 @@ public:
                 case WM_RBUTTONDBLCLK:
                     if (ax->isShowing())
                     {
-                        if (ComponentPeer* const peer = ax->getPeer())
+                        ComponentPeer* const peer = ax->getPeer();
+
+                        if (peer != nullptr)
                         {
                             ActiveXHelpers::offerActiveXMouseEventToPeer (peer, hwnd, message, lParam);
 
@@ -336,8 +340,12 @@ void ActiveXControlComponent::paint (Graphics& g)
 bool ActiveXControlComponent::createControl (const void* controlIID)
 {
     deleteControl();
+    ComponentPeer* const peer = getPeer();
 
-    if (ComponentPeer* const peer = getPeer())
+    // the component must have already been added to a real window when you call this!
+    jassert (peer != nullptr);
+
+    if (peer != nullptr)
     {
         const Rectangle<int> bounds (getTopLevelComponent()->getLocalArea (this, getLocalBounds()));
         HWND hwnd = (HWND) peer->getNativeHandle();
@@ -376,11 +384,6 @@ bool ActiveXControlComponent::createControl (const void* controlIID)
                 }
             }
         }
-    }
-    else
-    {
-        // the component must have already been added to a real window when you call this!
-        jassertfalse;
     }
 
     return false;

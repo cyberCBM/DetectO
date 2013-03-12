@@ -69,6 +69,6 @@ void StretchableLayoutResizerBar::mouseDrag (const MouseEvent& e)
 
 void StretchableLayoutResizerBar::hasBeenMoved()
 {
-    if (Component* parent = getParentComponent())
-        parent->resized();
+    if (getParentComponent() != nullptr)
+        getParentComponent()->resized();
 }

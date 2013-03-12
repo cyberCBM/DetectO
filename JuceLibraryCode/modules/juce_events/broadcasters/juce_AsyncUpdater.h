@@ -45,6 +45,7 @@ public:
     AsyncUpdater();
 
     /** Destructor.
+
         If there are any pending callbacks when the object is deleted, these are lost.
     */
     virtual ~AsyncUpdater();
@@ -103,7 +104,7 @@ private:
     friend class ReferenceCountedObjectPtr<AsyncUpdaterMessage>;
     ReferenceCountedObjectPtr<AsyncUpdaterMessage> message;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AsyncUpdater)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AsyncUpdater);
 };
 
 

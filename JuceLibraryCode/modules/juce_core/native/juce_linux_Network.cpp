@@ -52,10 +52,10 @@ void MACAddress::findAllAddresses (Array<MACAddress>& result)
 }
 
 
-bool Process::openEmailWithAttachments (const String& /* targetEmailAddress */,
-                                        const String& /* emailSubject */,
-                                        const String& /* bodyText */,
-                                        const StringArray& /* filesToAttach */)
+bool Process::openEmailWithAttachments (const String& targetEmailAddress,
+                                        const String& emailSubject,
+                                        const String& bodyText,
+                                        const StringArray& filesToAttach)
 {
     jassertfalse;    // xxx todo
 
@@ -207,9 +207,7 @@ private:
             port = hostPort;
         }
 
-        struct addrinfo hints;
-        zerostruct (hints);
-
+        struct addrinfo hints = { 0 };
         hints.ai_family = AF_UNSPEC;
         hints.ai_socktype = SOCK_STREAM;
         hints.ai_flags = AI_NUMERICSERV;
@@ -445,7 +443,7 @@ private:
         return String::empty;
     }
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (WebInputStream)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (WebInputStream);
 };
 
 InputStream* URL::createNativeStream (const String& address, bool isPost, const MemoryBlock& postData,

@@ -343,19 +343,14 @@ void Graphics::fillRect (const Rectangle<int>& r) const
     context.fillRect (r, false);
 }
 
-void Graphics::fillRect (const Rectangle<float>& rectangle) const
-{
-    Path p;
-    p.addRectangle (rectangle);
-    fillPath (p);
-}
-
 void Graphics::fillRect (const float x, const float y, const float width, const float height) const
 {
     // passing in a silly number can cause maths problems in rendering!
     jassert (areCoordsSensibleNumbers (x, y, width, height));
 
-    fillRect (Rectangle<float> (x, y, width, height));
+    Path p;
+    p.addRectangle (x, y, width, height);
+    fillPath (p);
 }
 
 void Graphics::setPixel (int x, int y) const
@@ -411,8 +406,7 @@ void Graphics::drawRect (const int x, const int y, const int width, const int he
     context.fillRect (Rectangle<int> (x, y + height - lineThickness, width, lineThickness), false);
 }
 
-void Graphics::drawRect (const float x, const float y, const float width, const float height,
-                         const float lineThickness) const
+void Graphics::drawRect (const float x, const float y, const float width, const float height, const float lineThickness) const
 {
     // passing in a silly number can cause maths problems in rendering!
     jassert (areCoordsSensibleNumbers (x, y, width, height));
@@ -426,11 +420,6 @@ void Graphics::drawRect (const float x, const float y, const float width, const 
 }
 
 void Graphics::drawRect (const Rectangle<int>& r, const int lineThickness) const
-{
-    drawRect (r.getX(), r.getY(), r.getWidth(), r.getHeight(), lineThickness);
-}
-
-void Graphics::drawRect (const Rectangle<float>& r, const float lineThickness) const
 {
     drawRect (r.getX(), r.getY(), r.getWidth(), r.getHeight(), lineThickness);
 }

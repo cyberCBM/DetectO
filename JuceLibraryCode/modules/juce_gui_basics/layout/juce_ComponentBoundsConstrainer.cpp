@@ -24,8 +24,10 @@
 */
 
 ComponentBoundsConstrainer::ComponentBoundsConstrainer() noexcept
-    : minW (0), maxW (0x3fffffff),
-      minH (0), maxH (0x3fffffff),
+    : minW (0),
+      maxW (0x3fffffff),
+      minH (0),
+      maxH (0x3fffffff),
       minOffTop (0),
       minOffLeft (0),
       minOffBottom (0),
@@ -39,10 +41,25 @@ ComponentBoundsConstrainer::~ComponentBoundsConstrainer()
 }
 
 //==============================================================================
-void ComponentBoundsConstrainer::setMinimumWidth  (const int minimumWidth) noexcept   { minW = minimumWidth; }
-void ComponentBoundsConstrainer::setMaximumWidth  (const int maximumWidth) noexcept   { maxW = maximumWidth; }
-void ComponentBoundsConstrainer::setMinimumHeight (const int minimumHeight) noexcept  { minH = minimumHeight; }
-void ComponentBoundsConstrainer::setMaximumHeight (const int maximumHeight) noexcept  { maxH = maximumHeight; }
+void ComponentBoundsConstrainer::setMinimumWidth (const int minimumWidth) noexcept
+{
+    minW = minimumWidth;
+}
+
+void ComponentBoundsConstrainer::setMaximumWidth (const int maximumWidth) noexcept
+{
+    maxW = maximumWidth;
+}
+
+void ComponentBoundsConstrainer::setMinimumHeight (const int minimumHeight) noexcept
+{
+    minH = minimumHeight;
+}
+
+void ComponentBoundsConstrainer::setMaximumHeight (const int maximumHeight) noexcept
+{
+    maxH = maximumHeight;
+}
 
 void ComponentBoundsConstrainer::setMinimumSize (const int minimumWidth, const int minimumHeight) noexcept
 {
@@ -53,8 +70,11 @@ void ComponentBoundsConstrainer::setMinimumSize (const int minimumWidth, const i
     minW = minimumWidth;
     minH = minimumHeight;
 
-    if (minW > maxW)  maxW = minW;
-    if (minH > maxH)  maxH = minH;
+    if (minW > maxW)
+        maxW = minW;
+
+    if (minH > maxH)
+        maxH = minH;
 }
 
 void ComponentBoundsConstrainer::setMaximumSize (const int maximumWidth, const int maximumHeight) noexcept
@@ -88,10 +108,10 @@ void ComponentBoundsConstrainer::setMinimumOnscreenAmounts (const int minimumWhe
                                                             const int minimumWhenOffTheBottom,
                                                             const int minimumWhenOffTheRight) noexcept
 {
-    minOffTop    = minimumWhenOffTheTop;
-    minOffLeft   = minimumWhenOffTheLeft;
+    minOffTop = minimumWhenOffTheTop;
+    minOffLeft = minimumWhenOffTheLeft;
     minOffBottom = minimumWhenOffTheBottom;
-    minOffRight  = minimumWhenOffTheRight;
+    minOffRight = minimumWhenOffTheRight;
 }
 
 void ComponentBoundsConstrainer::setFixedAspectRatio (const double widthOverHeight) noexcept
@@ -116,16 +136,19 @@ void ComponentBoundsConstrainer::setBoundsForComponent (Component* const compone
     Rectangle<int> limits, bounds (targetBounds);
     BorderSize<int> border;
 
-    if (Component* const parent = component->getParentComponent())
+    Component* const parent = component->getParentComponent();
+
+    if (parent == nullptr)
     {
-        limits.setSize (parent->getWidth(), parent->getHeight());
-    }
-    else
-    {
-        if (ComponentPeer* const peer = component->getPeer())
+        ComponentPeer* peer = component->getPeer();
+        if (peer != nullptr)
             border = peer->getFrameSize();
 
         limits = Desktop::getInstance().getDisplays().getDisplayContaining (bounds.getCentre()).userArea;
+    }
+    else
+    {
+        limits.setSize (parent->getWidth(), parent->getHeight());
     }
 
     border.addTo (bounds);
@@ -149,7 +172,9 @@ void ComponentBoundsConstrainer::checkComponentBounds (Component* component)
 void ComponentBoundsConstrainer::applyBoundsToComponent (Component* component,
                                                          const Rectangle<int>& bounds)
 {
-    if (Component::Positioner* const positioner = component->getPositioner())
+    Component::Positioner* const positioner = component->getPositioner();
+
+    if (positioner != nullptr)
         positioner->applyNewBounds (bounds);
     else
         component->setBounds (bounds);

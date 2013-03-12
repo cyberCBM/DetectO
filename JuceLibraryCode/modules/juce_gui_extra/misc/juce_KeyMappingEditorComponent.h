@@ -63,9 +63,6 @@ public:
     /** Returns the KeyPressMappingSet that this component is acting upon. */
     KeyPressMappingSet& getMappings() const noexcept                { return mappings; }
 
-    /** Returns the ApplicationCommandManager that this component is connected to. */
-    ApplicationCommandManager& getCommandManager() const noexcept   { return mappings.getCommandManager(); }
-
 
     //==============================================================================
     /** Can be overridden if some commands need to be excluded from the list.
@@ -130,7 +127,7 @@ private:
     friend class ScopedPointer<TopLevelItem>;
     ScopedPointer<TopLevelItem> treeItem;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (KeyMappingEditorComponent)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (KeyMappingEditorComponent);
 };
 
 

@@ -57,7 +57,8 @@ namespace KeyboardFocusHelpers
             Array <Component*> localComps;
             ScreenPositionComparator comparator;
 
-            for (int i = parent->getNumChildComponents(); --i >= 0;)
+            int i;
+            for (i = parent->getNumChildComponents(); --i >= 0;)
             {
                 Component* const c = parent->getChildComponent (i);
 
@@ -65,7 +66,7 @@ namespace KeyboardFocusHelpers
                     localComps.addSorted (comparator, c);
             }
 
-            for (int i = 0; i < localComps.size(); ++i)
+            for (i = 0; i < localComps.size(); ++i)
             {
                 Component* const c = localComps.getUnchecked (i);
 

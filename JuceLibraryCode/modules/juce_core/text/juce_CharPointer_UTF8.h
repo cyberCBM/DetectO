@@ -134,10 +134,18 @@ public:
     /** Moves this pointer back to the previous character in the string. */
     CharPointer_UTF8& operator--() noexcept
     {
-        int count = 0;
+        const char n = *--data;
 
-        while ((*--data & 0xc0) == 0x80 && ++count < 4)
-        {}
+        if ((n & 0xc0) == 0xc0)
+        {
+            int count = 3;
+
+            do
+            {
+                --data;
+            }
+            while ((*data & 0xc0) == 0xc0 && --count >= 0);
+        }
 
         return *this;
     }

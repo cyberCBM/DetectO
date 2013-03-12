@@ -67,8 +67,10 @@ public:
 
     bool useTimeslice (const int elapsed)
     {
-        if (Component* const c = proxy != nullptr ? static_cast <Component*> (proxy)
-                                                  : static_cast <Component*> (component))
+        Component* const c = proxy != nullptr ? static_cast <Component*> (proxy)
+                                              : static_cast <Component*> (component);
+
+        if (c != nullptr)
         {
             msElapsed += elapsed;
             double newProgress = msElapsed / (double) msTotal;
@@ -136,23 +138,25 @@ public:
     class ProxyComponent  : public Component
     {
     public:
-        ProxyComponent (Component& c)
-            : image (c.createComponentSnapshot (c.getLocalBounds()))
+        ProxyComponent (Component& component)
+            : image (component.createComponentSnapshot (component.getLocalBounds()))
         {
-            setBounds (c.getBounds());
-            setTransform (c.getTransform());
-            setAlpha (c.getAlpha());
+            setBounds (component.getBounds());
+            setTransform (component.getTransform());
+            setAlpha (component.getAlpha());
             setInterceptsMouseClicks (false, false);
 
-            if (Component* const parent = c.getParentComponent())
+            Component* const parent = component.getParentComponent();
+
+            if (parent != nullptr)
                 parent->addAndMakeVisible (this);
-            else if (c.isOnDesktop() && c.getPeer() != nullptr)
-                addToDesktop (c.getPeer()->getStyleFlags() | ComponentPeer::windowIgnoresKeyPresses);
+            else if (component.isOnDesktop() && component.getPeer() != nullptr)
+                addToDesktop (component.getPeer()->getStyleFlags() | ComponentPeer::windowIgnoresKeyPresses);
             else
                 jassertfalse; // seem to be trying to animate a component that's not visible..
 
             setVisible (true);
-            toBehind (&c);
+            toBehind (&component);
         }
 
         void paint (Graphics& g)
@@ -165,7 +169,7 @@ public:
     private:
         Image image;
 
-        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProxyComponent)
+        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ProxyComponent);
     };
 
     WeakReference<Component> component;
@@ -278,7 +282,9 @@ void ComponentAnimator::cancelAllAnimations (const bool moveComponentsToTheirFin
 void ComponentAnimator::cancelAnimation (Component* const component,
                                          const bool moveComponentToItsFinalPosition)
 {
-    if (AnimationTask* const at = findTaskFor (component))
+    AnimationTask* const at = findTaskFor (component);
+
+    if (at != nullptr)
     {
         if (moveComponentToItsFinalPosition)
             at->moveToFinalDestination();
@@ -291,8 +297,9 @@ void ComponentAnimator::cancelAnimation (Component* const component,
 Rectangle<int> ComponentAnimator::getComponentDestination (Component* const component)
 {
     jassert (component != nullptr);
+    AnimationTask* const at = findTaskFor (component);
 
-    if (AnimationTask* const at = findTaskFor (component))
+    if (at != nullptr)
         return at->destination;
 
     return component->getBounds();

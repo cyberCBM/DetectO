@@ -23,47 +23,6 @@
   ==============================================================================
 */
 
-struct UndoManager::ActionSet
-{
-    ActionSet (const String& transactionName)
-        : name (transactionName),
-          time (Time::getCurrentTime())
-    {}
-
-    OwnedArray <UndoableAction> actions;
-    String name;
-    Time time;
-
-    bool perform() const
-    {
-        for (int i = 0; i < actions.size(); ++i)
-            if (! actions.getUnchecked(i)->perform())
-                return false;
-
-        return true;
-    }
-
-    bool undo() const
-    {
-        for (int i = actions.size(); --i >= 0;)
-            if (! actions.getUnchecked(i)->undo())
-                return false;
-
-        return true;
-    }
-
-    int getTotalSize() const
-    {
-        int total = 0;
-
-        for (int i = actions.size(); --i >= 0;)
-            total += actions.getUnchecked(i)->getSizeInUnits();
-
-        return total;
-    }
-};
-
-//==============================================================================
 UndoManager::UndoManager (const int maxNumberOfUnitsToKeep,
                           const int minimumTransactions)
    : totalUnitsStored (0),
@@ -77,12 +36,14 @@ UndoManager::UndoManager (const int maxNumberOfUnitsToKeep,
 
 UndoManager::~UndoManager()
 {
+    clearUndoHistory();
 }
 
 //==============================================================================
 void UndoManager::clearUndoHistory()
 {
     transactions.clear();
+    transactionNames.clear();
     totalUnitsStored = 0;
     nextIndex = 0;
     sendChangeMessage();
@@ -101,78 +62,88 @@ void UndoManager::setMaxNumberOfStoredUnits (const int maxNumberOfUnitsToKeep,
 }
 
 //==============================================================================
-bool UndoManager::perform (UndoableAction* const newAction, const String& actionName)
+bool UndoManager::perform (UndoableAction* const command_, const String& actionName)
 {
-    if (newAction != nullptr)
+    if (command_ != nullptr)
     {
-        ScopedPointer<UndoableAction> action (newAction);
-
-        if (reentrancyCheck)
-        {
-            jassertfalse;  // don't call perform() recursively from the UndoableAction::perform()
-                           // or undo() methods, or else these actions will be discarded!
-            return false;
-        }
+        ScopedPointer<UndoableAction> command (command_);
 
         if (actionName.isNotEmpty())
             currentTransactionName = actionName;
 
-        if (action->perform())
+        if (reentrancyCheck)
         {
-            ActionSet* actionSet = getCurrentSet();
+            jassertfalse;    // don't call perform() recursively from the UndoableAction::perform() or
+                             // undo() methods, or else these actions won't actually get done.
 
-            if (actionSet != nullptr && ! newTransaction)
+            return false;
+        }
+        else if (command->perform())
+        {
+            OwnedArray<UndoableAction>* commandSet = transactions [nextIndex - 1];
+
+            if (commandSet != nullptr && ! newTransaction)
             {
-                if (UndoableAction* const lastAction = actionSet->actions.getLast())
+                UndoableAction* lastAction = commandSet->getLast();
+
+                if (lastAction != nullptr)
                 {
-                    if (UndoableAction* const coalescedAction = lastAction->createCoalescedAction (action))
+                    UndoableAction* coalescedAction = lastAction->createCoalescedAction (command);
+
+                    if (coalescedAction != nullptr)
                     {
-                        action = coalescedAction;
+                        command = coalescedAction;
                         totalUnitsStored -= lastAction->getSizeInUnits();
-                        actionSet->actions.removeLast();
+                        commandSet->removeLast();
                     }
                 }
             }
             else
             {
-                actionSet = new ActionSet (currentTransactionName);
-                transactions.insert (nextIndex, actionSet);
+                commandSet = new OwnedArray<UndoableAction>();
+                transactions.insert (nextIndex, commandSet);
+                transactionNames.insert (nextIndex, currentTransactionName);
                 ++nextIndex;
             }
 
-            totalUnitsStored += action->getSizeInUnits();
-            actionSet->actions.add (action.release());
+            totalUnitsStored += command->getSizeInUnits();
+            commandSet->add (command.release());
             newTransaction = false;
 
-            clearFutureTransactions();
+            while (nextIndex < transactions.size())
+            {
+                const OwnedArray <UndoableAction>* const lastSet = transactions.getLast();
+
+                for (int i = lastSet->size(); --i >= 0;)
+                    totalUnitsStored -= lastSet->getUnchecked (i)->getSizeInUnits();
+
+                transactions.removeLast();
+                transactionNames.remove (transactionNames.size() - 1);
+            }
+
+            while (nextIndex > 0
+                   && totalUnitsStored > maxNumUnitsToKeep
+                   && transactions.size() > minimumTransactionsToKeep)
+            {
+                const OwnedArray <UndoableAction>* const firstSet = transactions.getFirst();
+
+                for (int i = firstSet->size(); --i >= 0;)
+                    totalUnitsStored -= firstSet->getUnchecked (i)->getSizeInUnits();
+
+                jassert (totalUnitsStored >= 0); // something fishy going on if this fails!
+
+                transactions.remove (0);
+                transactionNames.remove (0);
+                --nextIndex;
+            }
+
             sendChangeMessage();
+
             return true;
         }
     }
 
     return false;
-}
-
-void UndoManager::clearFutureTransactions()
-{
-    while (nextIndex < transactions.size())
-    {
-        totalUnitsStored -= transactions.getLast()->getTotalSize();
-        transactions.removeLast();
-    }
-
-    while (nextIndex > 0
-            && totalUnitsStored > maxNumUnitsToKeep
-            && transactions.size() > minimumTransactionsToKeep)
-    {
-        totalUnitsStored -= transactions.getFirst()->getTotalSize();
-        transactions.remove (0);
-        --nextIndex;
-
-        // if this fails, then some actions may not be returning
-        // consistent results from their getSizeInUnits() method
-        jassert (totalUnitsStored >= 0);
-    }
 }
 
 void UndoManager::beginNewTransaction (const String& actionName)
@@ -187,80 +158,92 @@ void UndoManager::setCurrentTransactionName (const String& newName)
 }
 
 //==============================================================================
-UndoManager::ActionSet* UndoManager::getCurrentSet() const noexcept     { return transactions [nextIndex - 1]; }
-UndoManager::ActionSet* UndoManager::getNextSet() const noexcept        { return transactions [nextIndex]; }
-
-bool UndoManager::canUndo() const   { return getCurrentSet() != nullptr; }
-bool UndoManager::canRedo() const   { return getNextSet()    != nullptr; }
-
-bool UndoManager::undo()
+bool UndoManager::canUndo() const
 {
-    if (const ActionSet* const s = getCurrentSet())
-    {
-        const ScopedValueSetter<bool> setter (reentrancyCheck, true);
-
-        if (s->undo())
-            --nextIndex;
-        else
-            clearUndoHistory();
-
-        beginNewTransaction();
-        sendChangeMessage();
-        return true;
-    }
-
-    return false;
+    return nextIndex > 0;
 }
 
-bool UndoManager::redo()
+bool UndoManager::canRedo() const
 {
-    if (const ActionSet* const s = getNextSet())
-    {
-        const ScopedValueSetter<bool> setter (reentrancyCheck, true);
-
-        if (s->perform())
-            ++nextIndex;
-        else
-            clearUndoHistory();
-
-        beginNewTransaction();
-        sendChangeMessage();
-        return true;
-    }
-
-    return false;
+    return nextIndex < transactions.size();
 }
 
 String UndoManager::getUndoDescription() const
 {
-    if (const ActionSet* const s = getCurrentSet())
-        return s->name;
-
-    return String::empty;
+    return transactionNames [nextIndex - 1];
 }
 
 String UndoManager::getRedoDescription() const
 {
-    if (const ActionSet* const s = getNextSet())
-        return s->name;
-
-    return String::empty;
+    return transactionNames [nextIndex];
 }
 
-Time UndoManager::getTimeOfUndoTransaction() const
+bool UndoManager::undo()
 {
-    if (const ActionSet* const s = getCurrentSet())
-        return s->time;
+    const OwnedArray<UndoableAction>* const commandSet = transactions [nextIndex - 1];
 
-    return Time();
+    if (commandSet == nullptr)
+        return false;
+
+    bool failed = false;
+
+    {
+        const ScopedValueSetter<bool> setter (reentrancyCheck, true);
+
+        for (int i = commandSet->size(); --i >= 0;)
+        {
+            if (! commandSet->getUnchecked(i)->undo())
+            {
+                jassertfalse;
+                failed = true;
+                break;
+            }
+        }
+    }
+
+    if (failed)
+        clearUndoHistory();
+    else
+        --nextIndex;
+
+    beginNewTransaction();
+
+    sendChangeMessage();
+    return true;
 }
 
-Time UndoManager::getTimeOfRedoTransaction() const
+bool UndoManager::redo()
 {
-    if (const ActionSet* const s = getNextSet())
-        return s->time;
+    const OwnedArray<UndoableAction>* const commandSet = transactions [nextIndex];
 
-    return Time::getCurrentTime();
+    if (commandSet == nullptr)
+        return false;
+
+    bool failed = false;
+
+    {
+        const ScopedValueSetter<bool> setter (reentrancyCheck, true);
+
+        for (int i = 0; i < commandSet->size(); ++i)
+        {
+            if (! commandSet->getUnchecked(i)->perform())
+            {
+                jassertfalse;
+                failed = true;
+                break;
+            }
+        }
+    }
+
+    if (failed)
+        clearUndoHistory();
+    else
+        ++nextIndex;
+
+    beginNewTransaction();
+
+    sendChangeMessage();
+    return true;
 }
 
 bool UndoManager::undoCurrentTransactionOnly()
@@ -270,17 +253,21 @@ bool UndoManager::undoCurrentTransactionOnly()
 
 void UndoManager::getActionsInCurrentTransaction (Array <const UndoableAction*>& actionsFound) const
 {
-    if (! newTransaction)
-        if (const ActionSet* const s = getCurrentSet())
-            for (int i = 0; i < s->actions.size(); ++i)
-                actionsFound.add (s->actions.getUnchecked(i));
+    const OwnedArray <UndoableAction>* const commandSet = transactions [nextIndex - 1];
+
+    if (commandSet != nullptr && ! newTransaction)
+    {
+        for (int i = 0; i < commandSet->size(); ++i)
+            actionsFound.add (commandSet->getUnchecked(i));
+    }
 }
 
 int UndoManager::getNumActionsInCurrentTransaction() const
 {
-    if (! newTransaction)
-        if (const ActionSet* const s = getCurrentSet())
-            return s->actions.size();
+    const OwnedArray <UndoableAction>* const commandSet = transactions [nextIndex - 1];
+
+    if (commandSet != nullptr && ! newTransaction)
+        return commandSet->size();
 
     return 0;
 }

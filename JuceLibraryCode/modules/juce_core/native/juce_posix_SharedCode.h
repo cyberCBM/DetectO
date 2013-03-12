@@ -67,9 +67,9 @@ void CriticalSection::exit() const noexcept
 class WaitableEventImpl
 {
 public:
-    WaitableEventImpl (const bool useManualReset)
+    WaitableEventImpl (const bool manualReset_)
         : triggered (false),
-          manualReset (useManualReset)
+          manualReset (manualReset_)
     {
         pthread_cond_init (&condition, 0);
 
@@ -156,7 +156,7 @@ private:
     bool triggered;
     const bool manualReset;
 
-    JUCE_DECLARE_NON_COPYABLE (WaitableEventImpl)
+    JUCE_DECLARE_NON_COPYABLE (WaitableEventImpl);
 };
 
 WaitableEvent::WaitableEvent (const bool manualReset) noexcept
@@ -205,7 +205,7 @@ File File::getCurrentWorkingDirectory()
 
     char localBuffer [1024];
     char* cwd = getcwd (localBuffer, sizeof (localBuffer) - 1);
-    size_t bufferSize = 4096;
+    int bufferSize = 4096;
 
     while (cwd == nullptr && errno == ERANGE)
     {
@@ -500,7 +500,7 @@ int FileOutputStream::writeInternal (const void* const data, const int numBytes)
 
     if (fileHandle != 0)
     {
-        result = ::write (getFD (fileHandle), data, (size_t) numBytes);
+        result = ::write (getFD (fileHandle), data, numBytes);
 
         if (result == -1)
             status = getResultForErrno();
@@ -512,19 +512,8 @@ int FileOutputStream::writeInternal (const void* const data, const int numBytes)
 void FileOutputStream::flushInternal()
 {
     if (fileHandle != 0)
-    {
         if (fsync (getFD (fileHandle)) == -1)
             status = getResultForErrno();
-
-       #if JUCE_ANDROID
-        // This stuff tells the OS to asynchronously update the metadata
-        // that the OS has cached aboud the file - this metadata is used
-        // when the device is acting as a USB drive, and unless it's explicitly
-        // refreshed, it'll get out of step with the real file.
-        const LocalRef<jstring> t (javaString (file.getFullPathName()));
-        android.activity.callVoidMethod (JuceAppActivity.scanFile, t.get());
-       #endif
-    }
 }
 
 Result FileOutputStream::truncate()
@@ -539,7 +528,9 @@ Result FileOutputStream::truncate()
 //==============================================================================
 String SystemStats::getEnvironmentVariable (const String& name, const String& defaultValue)
 {
-    if (const char* s = ::getenv (name.toUTF8()))
+    const char* s = ::getenv (name.toUTF8());
+
+    if (s != nullptr)
         return String::fromUTF8 (s);
 
     return defaultValue;
@@ -582,16 +573,10 @@ MemoryMappedFile::~MemoryMappedFile()
 }
 
 //==============================================================================
-#if JUCE_PROJUCER_LIVE_BUILD
-extern "C" const char* juce_getCurrentExecutablePath();
-#endif
-
 File juce_getExecutableFile();
 File juce_getExecutableFile()
 {
-   #if JUCE_PROJUCER_LIVE_BUILD
-    return File (juce_getCurrentExecutablePath());
-   #elif JUCE_ANDROID
+   #if JUCE_ANDROID
     return File (android.appFile);
    #else
     struct DLAddrReader
@@ -638,8 +623,7 @@ String File::getVolumeLabel() const
         char            mountPointSpace [MAXPATHLEN];
     } attrBuf;
 
-    struct attrlist attrList;
-    zerostruct (attrList); // (can't use "= { 0 }" on this object because it's typedef'ed as a C struct)
+    struct attrlist attrList = { 0 };
     attrList.bitmapcount = ATTR_BIT_MAP_COUNT;
     attrList.volattr = ATTR_VOL_INFO | ATTR_VOL_NAME;
 
@@ -711,7 +695,7 @@ String juce_getOutputFromCommand (const String& command)
 class InterProcessLock::Pimpl
 {
 public:
-    Pimpl (const String& lockName, const int timeOutMillisecs)
+    Pimpl (const String& name, const int timeOutMillisecs)
         : handle (0), refCount (1)
     {
        #if JUCE_IOS
@@ -728,16 +712,14 @@ public:
              tempFolder = "/tmp";
         #endif
 
-        const File temp (tempFolder.getChildFile (lockName));
+        const File temp (tempFolder.getChildFile (name));
 
         temp.create();
         handle = open (temp.getFullPathName().toUTF8(), O_RDWR);
 
         if (handle != 0)
         {
-            struct flock fl;
-            zerostruct (fl);
-
+            struct flock fl = { 0 };
             fl.l_whence = SEEK_SET;
             fl.l_type = F_WRLCK;
 
@@ -775,9 +757,7 @@ public:
        #if ! JUCE_IOS
         if (handle != 0)
         {
-            struct flock fl;
-            zerostruct (fl);
-
+            struct flock fl = { 0 };
             fl.l_whence = SEEK_SET;
             fl.l_type = F_UNLCK;
 
@@ -793,7 +773,8 @@ public:
     int handle, refCount;
 };
 
-InterProcessLock::InterProcessLock (const String& nm)  : name (nm)
+InterProcessLock::InterProcessLock (const String& name_)
+    : name (name_)
 {
 }
 
@@ -1010,13 +991,11 @@ public:
                 // we're the child process..
                 close (pipeHandles[0]);   // close the read handle
                 dup2 (pipeHandles[1], 1); // turns the pipe into stdout
-                dup2 (pipeHandles[1], 2); //  + stderr
                 close (pipeHandles[1]);
 
                 Array<char*> argv;
                 for (int i = 0; i < arguments.size(); ++i)
-                    if (arguments[i].isNotEmpty())
-                        argv.add (arguments[i].toUTF8().getAddress());
+                    argv.add (arguments[i].toUTF8().getAddress());
 
                 argv.add (nullptr);
 
@@ -1048,7 +1027,7 @@ public:
         {
             int childState;
             const int pid = waitpid (childPID, &childState, WNOHANG);
-            return pid == 0 || ! (WIFEXITED (childState) || WIFSIGNALED (childState));
+            return pid > 0 && ! (WIFEXITED (childState) || WIFSIGNALED (childState));
         }
 
         return false;
@@ -1058,15 +1037,11 @@ public:
     {
         jassert (dest != nullptr);
 
-        #ifdef fdopen
-         #error // the zlib headers define this function as NULL!
-        #endif
-
         if (readHandle == 0 && childPID != 0)
             readHandle = fdopen (pipeHandle, "r");
 
         if (readHandle != 0)
-            return (int) fread (dest, 1, (size_t) numBytes, readHandle);
+            return fread (dest, 1, numBytes, readHandle);
 
         return 0;
     }
@@ -1082,22 +1057,19 @@ private:
     int pipeHandle;
     FILE* readHandle;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ActiveProcess)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ActiveProcess);
 };
 
 bool ChildProcess::start (const String& command)
 {
     StringArray tokens;
     tokens.addTokens (command, true);
-    return start (tokens);
-}
+    tokens.removeEmptyStrings (true);
 
-bool ChildProcess::start (const StringArray& args)
-{
-    if (args.size() == 0)
+    if (tokens.size() == 0)
         return false;
 
-    activeProcess = new ActiveProcess (args);
+    activeProcess = new ActiveProcess (tokens);
 
     if (activeProcess->childPID == 0)
         activeProcess = nullptr;

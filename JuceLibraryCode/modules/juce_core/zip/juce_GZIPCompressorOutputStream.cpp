@@ -46,26 +46,26 @@ public:
             zlibNamespace::deflateEnd (&stream);
     }
 
-    bool write (const uint8* data, unsigned int dataSize, OutputStream& out)
+    bool write (const uint8* data, int dataSize, OutputStream& destStream)
     {
         // When you call flush() on a gzip stream, the stream is closed, and you can
         // no longer continue to write data to it!
         jassert (! finished);
 
         while (dataSize > 0)
-            if (! doNextBlock (data, dataSize, out, Z_NO_FLUSH))
+            if (! doNextBlock (data, dataSize, destStream, Z_NO_FLUSH))
                 return false;
 
         return true;
     }
 
-    void finish (OutputStream& out)
+    void finish (OutputStream& destStream)
     {
         const uint8* data = nullptr;
-        unsigned int dataSize = 0;
+        int dataSize = 0;
 
         while (! finished)
-            doNextBlock (data, dataSize, out, Z_FINISH);
+            doNextBlock (data, dataSize, destStream, Z_FINISH);
     }
 
 private:
@@ -76,7 +76,7 @@ private:
     bool isFirstDeflate, streamIsValid, finished;
     zlibNamespace::Bytef buffer[32768];
 
-    bool doNextBlock (const uint8*& data, unsigned int& dataSize, OutputStream& out, const int flushMode)
+    bool doNextBlock (const uint8*& data, int& dataSize, OutputStream& destStream, const int flushMode)
     {
         using namespace zlibNamespace;
         if (streamIsValid)
@@ -98,9 +98,9 @@ private:
                 case Z_OK:
                 {
                     data += dataSize - stream.avail_in;
-                    dataSize = stream.avail_in;
+                    dataSize = (int) stream.avail_in;
                     const int bytesDone = ((int) sizeof (buffer)) - (int) stream.avail_out;
-                    return bytesDone <= 0 || out.write (buffer, bytesDone);
+                    return bytesDone <= 0 || destStream.write (buffer, bytesDone);
                 }
 
                 default:
@@ -111,18 +111,18 @@ private:
         return false;
     }
 
-    JUCE_DECLARE_NON_COPYABLE (GZIPCompressorHelper)
+    JUCE_DECLARE_NON_COPYABLE (GZIPCompressorHelper);
 };
 
 //==============================================================================
-GZIPCompressorOutputStream::GZIPCompressorOutputStream (OutputStream* const out,
+GZIPCompressorOutputStream::GZIPCompressorOutputStream (OutputStream* const destStream_,
                                                         const int compressionLevel,
                                                         const bool deleteDestStream,
                                                         const int windowBits)
-    : destStream (out, deleteDestStream),
+    : destStream (destStream_, deleteDestStream),
       helper (new GZIPCompressorHelper (compressionLevel, windowBits))
 {
-    jassert (out != nullptr);
+    jassert (destStream_ != nullptr);
 }
 
 GZIPCompressorOutputStream::~GZIPCompressorOutputStream()
@@ -140,8 +140,7 @@ bool GZIPCompressorOutputStream::write (const void* destBuffer, int howMany)
 {
     jassert (destBuffer != nullptr && howMany >= 0);
 
-    return helper->write (static_cast <const uint8*> (destBuffer),
-                          (unsigned int) howMany, *destStream);
+    return helper->write (static_cast <const uint8*> (destBuffer), howMany, *destStream);
 }
 
 int64 GZIPCompressorOutputStream::getPosition()
@@ -177,7 +176,7 @@ public:
 
                 for (int j = rng.nextInt (100); --j >= 0;)
                 {
-                    MemoryBlock data ((unsigned int) (rng.nextInt (2000) + 1));
+                    MemoryBlock data (rng.nextInt (2000) + 1);
 
                     for (int k = (int) data.getSize(); --k >= 0;)
                         data[k] = (char) rng.nextInt (255);

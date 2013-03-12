@@ -24,7 +24,7 @@
 */
 
 OpenGLTexture::OpenGLTexture()
-    : textureID (0), width (0), height (0), ownerContext (nullptr)
+    : textureID (0), width (0), height (0)
 {
 }
 
@@ -40,11 +40,9 @@ bool OpenGLTexture::isValidSize (int width, int height)
 
 void OpenGLTexture::create (const int w, const int h, const void* pixels, GLenum type)
 {
-    ownerContext = OpenGLContext::getCurrentContext();
-
     // Texture objects can only be created when the current thread has an active OpenGL
     // context. You'll need to create this object in one of the OpenGLContext's callbacks.
-    jassert (ownerContext != nullptr);
+    jassert (OpenGLHelpers::isContextActive());
 
     jassert (isValidSize (w, h)); // Perhaps these dimensions must be a power-of-two?
 
@@ -81,7 +79,7 @@ struct Flipper
     static void flip (HeapBlock<PixelARGB>& dataCopy, const uint8* srcData, const int lineStride,
                       const int w, const int h, const int textureW, const int textureH)
     {
-        dataCopy.malloc ((size_t) (textureW * textureH));
+        dataCopy.malloc (textureW * textureH);
 
         for (int y = 0; y < h; ++y)
         {
@@ -91,17 +89,8 @@ struct Flipper
             for (int x = 0; x < w; ++x)
                 dst[x].set (src[x]);
 
-            if (textureW > w)
-                dst[w].set (PixelARGB (0));
-
             srcData += lineStride;
         }
-
-        // for textures which are larger than the area of interest, clear the pixels that lie
-        // just outside the actual image, so that the texture interpolation doesn't read junk.
-        if (textureH > h)
-            zeromem (dataCopy + textureW * (textureH - 1 - h),
-                     sizeof (PixelARGB) * jmin (textureW, w + 1));
     }
 };
 
@@ -151,10 +140,10 @@ void OpenGLTexture::loadARGBFlipped (const PixelARGB* pixels, int w, int h)
 
 void OpenGLTexture::release()
 {
-    if (textureID != 0
-         && ownerContext == OpenGLContext::getCurrentContext())
+    if (textureID != 0)
     {
-        glDeleteTextures (1, &textureID);
+        if (OpenGLHelpers::isContextActive())
+            glDeleteTextures (1, &textureID);
 
         textureID = 0;
         width = 0;

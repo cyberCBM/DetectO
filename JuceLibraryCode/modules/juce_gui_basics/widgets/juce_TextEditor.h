@@ -262,6 +262,16 @@ public:
     */
     void setSelectAllWhenFocused (bool shouldSelectAll);
 
+    /** Sets limits on the characters that can be entered.
+
+        @param maxTextLength        if this is > 0, it sets a maximum length limit; if 0, no
+                                    limit is set
+        @param allowedCharacters    if this is non-empty, then only characters that occur in
+                                    this string are allowed to be entered into the editor.
+    */
+    void setInputRestrictions (int maxTextLength,
+                               const String& allowedCharacters = String::empty);
+
     /** When the text editor is empty, it can be set to display a message.
 
         This is handy for things like telling the user what to type in the box - the
@@ -282,23 +292,23 @@ public:
 
         @see TextEditor::addListener
     */
-    class Listener
+    class JUCE_API  Listener
     {
     public:
         /** Destructor. */
         virtual ~Listener()  {}
 
         /** Called when the user changes the text in some way. */
-        virtual void textEditorTextChanged (TextEditor&) {}
+        virtual void textEditorTextChanged (TextEditor& editor);
 
         /** Called when the user presses the return key. */
-        virtual void textEditorReturnKeyPressed (TextEditor&) {}
+        virtual void textEditorReturnKeyPressed (TextEditor& editor);
 
         /** Called when the user presses the escape key. */
-        virtual void textEditorEscapeKeyPressed (TextEditor&) {}
+        virtual void textEditorEscapeKeyPressed (TextEditor& editor);
 
         /** Called when the text editor loses focus. */
-        virtual void textEditorFocusLost (TextEditor&) {}
+        virtual void textEditorFocusLost (TextEditor& editor);
     };
 
     /** Registers a listener to be told when things happen to the text.
@@ -529,65 +539,6 @@ public:
     virtual void performPopupMenuAction (int menuItemID);
 
     //==============================================================================
-    /** Base class for input filters that can be applied to a TextEditor to restrict
-        the text that can be entered.
-    */
-    class InputFilter
-    {
-    public:
-        InputFilter() {}
-        virtual ~InputFilter() {}
-
-        /** This method is called whenever text is entered into the editor.
-            An implementation of this class should should check the input string,
-            and return an edited version of it that should be used.
-        */
-        virtual String filterNewText (TextEditor&, const String& newInput) = 0;
-    };
-
-    /** An input filter for a TextEditor that limits the length of text and/or the
-        characters that it may contain.
-    */
-    class JUCE_API  LengthAndCharacterRestriction  : public InputFilter
-    {
-    public:
-        /** Creates a filter that limits the length of text, and/or the characters that it can contain.
-            @param maxNumChars          if this is > 0, it sets a maximum length limit; if <= 0, no
-                                        limit is set
-            @param allowedCharacters    if this is non-empty, then only characters that occur in
-                                        this string are allowed to be entered into the editor.
-        */
-        LengthAndCharacterRestriction (int maxNumChars, const String& allowedCharacters);
-
-    private:
-        String allowedCharacters;
-        int maxLength;
-
-        String filterNewText (TextEditor&, const String&);
-
-        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (LengthAndCharacterRestriction)
-    };
-
-    /** Sets an input filter that should be applied to this editor.
-        The filter can be nullptr, to remove any existing filters.
-        If takeOwnership is true, then the filter will be owned and deleted by the editor
-        when no longer needed.
-    */
-    void setInputFilter (InputFilter* newFilter, bool takeOwnership);
-
-    /** Sets limits on the characters that can be entered.
-        This is just a shortcut that passes an instance of the LengthAndCharacterRestriction
-        class to setInputFilter().
-
-        @param maxTextLength        if this is > 0, it sets a maximum length limit; if 0, no
-                                    limit is set
-        @param allowedCharacters    if this is non-empty, then only characters that occur in
-                                    this string are allowed to be entered into the editor.
-    */
-    void setInputRestrictions (int maxTextLength,
-                               const String& allowedCharacters = String::empty);
-
-    //==============================================================================
     /** @internal */
     void paint (Graphics&);
     /** @internal */
@@ -643,7 +594,7 @@ protected:
 private:
     //==============================================================================
     class Iterator;
-    JUCE_PUBLIC_IN_DLL_BUILD (class UniformTextSection)
+    class UniformTextSection;
     class TextHolderComponent;
     class InsertAction;
     class RemoveAction;
@@ -670,6 +621,7 @@ private:
 
     UndoManager undoManager;
     ScopedPointer<CaretComponent> caret;
+    int maxTextLength;
     Range<int> selection;
     int leftIndent, topIndent;
     unsigned int lastTransactionTime;
@@ -680,7 +632,6 @@ private:
     String textToShowWhenEmpty;
     Colour colourForTextWhenEmpty;
     juce_wchar passwordCharacter;
-    OptionalScopedPointer<InputFilter> inputFilter;
     Value textValue;
 
     enum
@@ -690,6 +641,7 @@ private:
         draggingSelectionEnd
     } dragType;
 
+    String allowedCharacters;
     ListenerList <Listener> listeners;
     Array <Range<int> > underlinedSections;
 
@@ -709,7 +661,7 @@ private:
     int indexAtPosition (float x, float y);
     int findWordBreakAfter (int position) const;
     int findWordBreakBefore (int position) const;
-    bool moveCaretWithTransaction (int newPos, bool selecting);
+    bool moveCaretWithTransation (int newPos, bool selecting);
     friend class TextHolderComponent;
     friend class TextEditorViewport;
     void drawContent (Graphics&);
@@ -721,7 +673,7 @@ private:
     bool undoOrRedo (bool shouldUndo);
     UndoManager* getUndoManager() noexcept;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TextEditor)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TextEditor);
 };
 
 /** This typedef is just for compatibility with old code - newer code should use the TextEditor::Listener class directly. */

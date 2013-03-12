@@ -23,14 +23,14 @@
   ==============================================================================
 */
 
-ToolbarButton::ToolbarButton (const int iid, const String& buttonText,
-                              Drawable* const normalIm, Drawable* const toggledOnIm)
-   : ToolbarItemComponent (iid, buttonText, true),
-     normalImage (normalIm),
-     toggledOnImage (toggledOnIm),
+ToolbarButton::ToolbarButton (const int itemId_, const String& buttonText,
+                              Drawable* const normalImage_, Drawable* const toggledOnImage_)
+   : ToolbarItemComponent (itemId_, buttonText, true),
+     normalImage (normalImage_),
+     toggledOnImage (toggledOnImage_),
      currentImage (nullptr)
 {
-    jassert (normalImage != nullptr);
+    jassert (normalImage_ != nullptr);
 }
 
 ToolbarButton::~ToolbarButton()

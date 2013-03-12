@@ -480,8 +480,8 @@ bool File::isOnHardDisk() const
 
     if (fullPath.toLowerCase()[0] <= 'b' && fullPath[1] == ':')
         return n != DRIVE_REMOVABLE;
-
-    return n != DRIVE_CDROM && n != DRIVE_REMOTE;
+    else
+        return n != DRIVE_CDROM && n != DRIVE_REMOTE;
 }
 
 bool File::isOnRemovableDrive() const
@@ -510,9 +510,8 @@ File JUCE_CALLTYPE File::getSpecialLocation (const SpecialLocationType type)
         case userApplicationDataDirectory:      csidlType = CSIDL_APPDATA; break;
         case commonApplicationDataDirectory:    csidlType = CSIDL_COMMON_APPDATA; break;
         case globalApplicationsDirectory:       csidlType = CSIDL_PROGRAM_FILES; break;
-        case userMusicDirectory:                csidlType = 0x0d; /*CSIDL_MYMUSIC*/ break;
-        case userMoviesDirectory:               csidlType = 0x0e; /*CSIDL_MYVIDEO*/ break;
-        case userPicturesDirectory:             csidlType = 0x27; /*CSIDL_MYPICTURES*/ break;
+        case userMusicDirectory:                csidlType = 0x0d /*CSIDL_MYMUSIC*/; break;
+        case userMoviesDirectory:               csidlType = 0x0e /*CSIDL_MYVIDEO*/; break;
 
         case tempDirectory:
         {
@@ -587,40 +586,30 @@ File File::getLinkedTarget() const
 
     if (! exists())
         p += ".lnk";
-    else if (! hasFileExtension (".lnk"))
+    else if (getFileExtension() != ".lnk")
         return result;
 
     ComSmartPtr <IShellLink> shellLink;
-    ComSmartPtr <IPersistFile> persistFile;
-
-    if (SUCCEEDED (shellLink.CoCreateInstance (CLSID_ShellLink))
-         && SUCCEEDED (shellLink.QueryInterface (persistFile))
-         && SUCCEEDED (persistFile->Load (p.toWideCharPointer(), STGM_READ))
-         && SUCCEEDED (shellLink->Resolve (0, SLR_ANY_MATCH | SLR_NO_UI)))
+    if (SUCCEEDED (shellLink.CoCreateInstance (CLSID_ShellLink)))
     {
-        WIN32_FIND_DATA winFindData;
-        WCHAR resolvedPath [MAX_PATH];
+        ComSmartPtr <IPersistFile> persistFile;
+        if (SUCCEEDED (shellLink.QueryInterface (persistFile)))
+        {
+            if (SUCCEEDED (persistFile->Load (p.toWideCharPointer(), STGM_READ))
+                 && SUCCEEDED (shellLink->Resolve (0, SLR_ANY_MATCH | SLR_NO_UI)))
+            {
+                WIN32_FIND_DATA winFindData;
+                WCHAR resolvedPath [MAX_PATH];
 
-        if (SUCCEEDED (shellLink->GetPath (resolvedPath, MAX_PATH, &winFindData, SLGP_UNCPRIORITY)))
-            result = File (resolvedPath);
+                if (SUCCEEDED (shellLink->GetPath (resolvedPath, MAX_PATH, &winFindData, SLGP_UNCPRIORITY)))
+                    result = File (resolvedPath);
+            }
+        }
     }
 
     return result;
 }
 
-bool File::createLink (const String& description, const File& linkFileToCreate) const
-{
-    linkFileToCreate.deleteFile();
-
-    ComSmartPtr <IShellLink> shellLink;
-    ComSmartPtr <IPersistFile> persistFile;
-
-    return SUCCEEDED (shellLink.CoCreateInstance (CLSID_ShellLink))
-        && SUCCEEDED (shellLink->SetPath (getFullPathName().toWideCharPointer()))
-        && SUCCEEDED (shellLink->SetDescription (description.toWideCharPointer()))
-        && SUCCEEDED (shellLink.QueryInterface (persistFile))
-        && SUCCEEDED (persistFile->Save (linkFileToCreate.getFullPathName().toWideCharPointer(), TRUE));
-}
 
 //==============================================================================
 class DirectoryIterator::NativeIterator::Pimpl
@@ -674,7 +663,7 @@ private:
     const String directoryWithWildCard;
     HANDLE handle;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Pimpl)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Pimpl);
 };
 
 DirectoryIterator::NativeIterator::NativeIterator (const File& directory, const String& wildCard)
@@ -701,8 +690,7 @@ bool Process::openDocument (const String& fileName, const String& parameters)
 
     JUCE_TRY
     {
-        hInstance = ShellExecute (0, 0, fileName.toWideCharPointer(),
-                                  parameters.toWideCharPointer(), 0, SW_SHOWDEFAULT);
+        hInstance = ShellExecute (0, 0, fileName.toWideCharPointer(), parameters.toWideCharPointer(), 0, SW_SHOWDEFAULT);
     }
     JUCE_CATCH_ALL
 
@@ -711,42 +699,45 @@ bool Process::openDocument (const String& fileName, const String& parameters)
 
 void File::revealToUser() const
 {
-    DynamicLibrary dll ("Shell32.dll");
-    JUCE_LOAD_WINAPI_FUNCTION (dll, ILCreateFromPathW, ilCreateFromPathW, ITEMIDLIST*, (LPCWSTR))
-    JUCE_LOAD_WINAPI_FUNCTION (dll, ILFree, ilFree, void, (ITEMIDLIST*))
-    JUCE_LOAD_WINAPI_FUNCTION (dll, SHOpenFolderAndSelectItems, shOpenFolderAndSelectItems, HRESULT, (ITEMIDLIST*, UINT, void*, DWORD))
+   #if JUCE_MINGW
+    jassertfalse; // not supported in MinGW..
+   #else
+    #pragma warning (push)
+    #pragma warning (disable: 4090) // (alignment warning)
+    ITEMIDLIST* const itemIDList = ILCreateFromPath (fullPath.toWideCharPointer());
+    #pragma warning (pop)
 
-    if (ilCreateFromPathW != nullptr && shOpenFolderAndSelectItems != nullptr && ilFree != nullptr)
+    if (itemIDList != nullptr)
     {
-        if (ITEMIDLIST* const itemIDList = ilCreateFromPathW (fullPath.toWideCharPointer()))
-        {
-            shOpenFolderAndSelectItems (itemIDList, 0, nullptr, 0);
-            ilFree (itemIDList);
-        }
+        SHOpenFolderAndSelectItems (itemIDList, 0, nullptr, 0);
+        ILFree (itemIDList);
     }
+   #endif
 }
 
 //==============================================================================
 class NamedPipe::Pimpl
 {
 public:
-    Pimpl (const String& pipeName, const bool createPipe)
-        : filename ("\\\\.\\pipe\\" + File::createLegalFileName (pipeName)),
-          pipeH (INVALID_HANDLE_VALUE),
+    Pimpl (const String& file, const bool isPipe_)
+        : pipeH (0),
           cancelEvent (CreateEvent (0, FALSE, FALSE, 0)),
-          connected (false), ownsPipe (createPipe), shouldStop (false)
+          connected (false),
+          isPipe (isPipe_)
     {
-        if (createPipe)
-            pipeH = CreateNamedPipe (filename.toWideCharPointer(),
-                                     PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED, 0,
-                                     PIPE_UNLIMITED_INSTANCES, 4096, 4096, 0, 0);
+        pipeH = isPipe ? CreateNamedPipe (file.toWideCharPointer(),
+                                          PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED, 0,
+                                          PIPE_UNLIMITED_INSTANCES, 4096, 4096, 0, 0)
+                       : CreateFile (file.toWideCharPointer(),
+                                     GENERIC_READ | GENERIC_WRITE, 0, 0,
+                                     OPEN_EXISTING, FILE_FLAG_OVERLAPPED, 0);
     }
 
     ~Pimpl()
     {
         disconnectPipe();
 
-        if (pipeH != INVALID_HANDLE_VALUE)
+        if (pipeH != 0)
             CloseHandle (pipeH);
 
         CloseHandle (cancelEvent);
@@ -754,48 +745,37 @@ public:
 
     bool connect (const int timeOutMs)
     {
-        if (! ownsPipe)
-        {
-            if (pipeH != INVALID_HANDLE_VALUE)
-                return true;
-
-            const Time timeOutEnd (Time::getCurrentTime() + RelativeTime::milliseconds (timeOutMs));
-
-            for (;;)
-            {
-                {
-                    const ScopedLock sl (createFileLock);
-
-                    if (pipeH == INVALID_HANDLE_VALUE)
-                        pipeH = CreateFile (filename.toWideCharPointer(),
-                                            GENERIC_READ | GENERIC_WRITE, 0, 0,
-                                            OPEN_EXISTING, FILE_FLAG_OVERLAPPED, 0);
-                }
-
-                if (pipeH != INVALID_HANDLE_VALUE)
-                    return true;
-
-                if (shouldStop || (timeOutMs >= 0 && Time::getCurrentTime() > timeOutEnd))
-                    return false;
-
-                Thread::sleep (1);
-            }
-        }
+        if (! isPipe)
+            return true;
 
         if (! connected)
         {
-            OverlappedEvent over;
+            OVERLAPPED over = { 0 };
+            over.hEvent = CreateEvent (0, TRUE, FALSE, 0);
 
-            if (ConnectNamedPipe (pipeH, &over.over) == 0)
+            if (ConnectNamedPipe (pipeH, &over))
             {
-                switch (GetLastError())
+                connected = false;  // yes, you read that right. In overlapped mode it should always return 0.
+            }
+            else
+            {
+                const DWORD err = GetLastError();
+
+                if (err == ERROR_IO_PENDING || err == ERROR_PIPE_LISTENING)
                 {
-                    case ERROR_PIPE_CONNECTED:   connected = true; break;
-                    case ERROR_IO_PENDING:
-                    case ERROR_PIPE_LISTENING:   connected = waitForIO (over, timeOutMs); break;
-                    default: break;
+                    HANDLE handles[] = { over.hEvent, cancelEvent };
+
+                    if (WaitForMultipleObjects (2, handles, FALSE,
+                                                timeOutMs >= 0 ? timeOutMs : INFINITE) == WAIT_OBJECT_0)
+                        connected = true;
+                }
+                else if (err == ERROR_PIPE_CONNECTED)
+                {
+                    connected = true;
                 }
             }
+
+            CloseHandle (over.hEvent);
         }
 
         return connected;
@@ -803,150 +783,174 @@ public:
 
     void disconnectPipe()
     {
-        if (ownsPipe && connected)
+        if (connected)
         {
             DisconnectNamedPipe (pipeH);
             connected = false;
         }
     }
 
-    int read (void* destBuffer, const int maxBytesToRead, const int timeOutMilliseconds)
-    {
-        while (connect (timeOutMilliseconds))
-        {
-            if (maxBytesToRead <= 0)
-                return 0;
+    bool isConnected() const noexcept  { return connected; }
 
-            OverlappedEvent over;
-            unsigned long numRead;
-
-            if (ReadFile (pipeH, destBuffer, (DWORD) maxBytesToRead, &numRead, &over.over))
-                return (int) numRead;
-
-            const DWORD lastError = GetLastError();
-
-            if (lastError == ERROR_IO_PENDING)
-            {
-                if (! waitForIO (over, timeOutMilliseconds))
-                    return -1;
-
-                if (GetOverlappedResult (pipeH, &over.over, &numRead, FALSE))
-                    return (int) numRead;
-            }
-
-            if (ownsPipe && (GetLastError() == ERROR_BROKEN_PIPE || GetLastError() == ERROR_PIPE_NOT_CONNECTED))
-                disconnectPipe();
-            else
-                break;
-        }
-
-        return -1;
-    }
-
-    int write (const void* sourceBuffer, int numBytesToWrite, int timeOutMilliseconds)
-    {
-        if (connect (timeOutMilliseconds))
-        {
-            if (numBytesToWrite <= 0)
-                return 0;
-
-            OverlappedEvent over;
-            unsigned long numWritten;
-
-            if (WriteFile (pipeH, sourceBuffer, (DWORD) numBytesToWrite, &numWritten, &over.over))
-                return (int) numWritten;
-
-            if (GetLastError() == ERROR_IO_PENDING)
-            {
-                if (! waitForIO (over, timeOutMilliseconds))
-                    return -1;
-
-                if (GetOverlappedResult (pipeH, &over.over, &numWritten, FALSE))
-                    return (int) numWritten;
-
-                if (GetLastError() == ERROR_BROKEN_PIPE && ownsPipe)
-                    disconnectPipe();
-            }
-        }
-
-        return -1;
-    }
-
-    const String filename;
     HANDLE pipeH, cancelEvent;
-    bool connected, ownsPipe, shouldStop;
-    CriticalSection createFileLock;
-
-private:
-    struct OverlappedEvent
-    {
-        OverlappedEvent()
-        {
-            zerostruct (over);
-            over.hEvent = CreateEvent (0, TRUE, FALSE, 0);
-        }
-
-        ~OverlappedEvent()
-        {
-            CloseHandle (over.hEvent);
-        }
-
-        OVERLAPPED over;
-    };
-
-    bool waitForIO (OverlappedEvent& over, int timeOutMilliseconds)
-    {
-        if (shouldStop)
-            return false;
-
-        HANDLE handles[] = { over.over.hEvent, cancelEvent };
-        DWORD waitResult = WaitForMultipleObjects (2, handles, FALSE,
-                                                   timeOutMilliseconds >= 0 ? timeOutMilliseconds
-                                                                            : INFINITE);
-
-        if (waitResult == WAIT_OBJECT_0)
-            return true;
-
-        CancelIo (pipeH);
-        return false;
-    }
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Pimpl)
+    bool connected, isPipe;
 };
+
+NamedPipe::NamedPipe()
+{
+}
+
+NamedPipe::~NamedPipe()
+{
+    close();
+}
+
+bool NamedPipe::isOpen() const
+{
+    return pimpl != nullptr && pimpl->connected;
+}
+
+void NamedPipe::cancelPendingReads()
+{
+    if (pimpl != nullptr)
+        SetEvent (pimpl->cancelEvent);
+}
 
 void NamedPipe::close()
 {
-    if (pimpl != nullptr)
-    {
-        pimpl->shouldStop = true;
-        SetEvent (pimpl->cancelEvent);
+    cancelPendingReads();
 
-        ScopedWriteLock sl (lock);
-        pimpl = nullptr;
-    }
+    const ScopedLock sl (lock);
+    ScopedPointer<Pimpl> deleter (pimpl); // (clears the pimpl member variable before deleting it)
 }
 
 bool NamedPipe::openInternal (const String& pipeName, const bool createPipe)
 {
-    pimpl = new Pimpl (pipeName, createPipe);
+    close();
 
-    if (createPipe && pimpl->pipeH == INVALID_HANDLE_VALUE)
-    {
-        pimpl = nullptr;
-        return false;
-    }
+    pimpl = new Pimpl ("\\\\.\\pipe\\" + File::createLegalFileName (pipeName), createPipe);
 
-    return true;
+    if (pimpl->pipeH != INVALID_HANDLE_VALUE)
+        return true;
+
+    pimpl = nullptr;
+    return false;
 }
 
-int NamedPipe::read (void* destBuffer, int maxBytesToRead, int timeOutMilliseconds)
+int NamedPipe::read (void* destBuffer, const int maxBytesToRead, const int timeOutMilliseconds)
 {
-    ScopedReadLock sl (lock);
-    return pimpl != nullptr ? pimpl->read (destBuffer, maxBytesToRead, timeOutMilliseconds) : -1;
+    const ScopedLock sl (lock);
+    int bytesRead = -1;
+    bool waitAgain = true;
+
+    while (waitAgain && pimpl != nullptr)
+    {
+        waitAgain = false;
+
+        if (! pimpl->connect (timeOutMilliseconds))
+            break;
+
+        if (maxBytesToRead <= 0)
+            return 0;
+
+        OVERLAPPED over = { 0 };
+        over.hEvent = CreateEvent (0, TRUE, FALSE, 0);
+
+        unsigned long numRead;
+
+        if (ReadFile (pimpl->pipeH, destBuffer, (DWORD) maxBytesToRead, &numRead, &over))
+        {
+            bytesRead = (int) numRead;
+        }
+        else
+        {
+            const DWORD lastError = GetLastError();
+
+            if (lastError == ERROR_IO_PENDING)
+            {
+                HANDLE handles[] = { over.hEvent, pimpl->cancelEvent };
+                DWORD waitResult = WaitForMultipleObjects (2, handles, FALSE,
+                                                           timeOutMilliseconds >= 0 ? timeOutMilliseconds
+                                                                                    : INFINITE);
+                if (waitResult != WAIT_OBJECT_0)
+                {
+                    // if the operation timed out, let's cancel it...
+                    CancelIo (pimpl->pipeH);
+                    WaitForSingleObject (over.hEvent, INFINITE);  // makes sure cancel is complete
+                }
+
+                if (GetOverlappedResult (pimpl->pipeH, &over, &numRead, FALSE))
+                {
+                    bytesRead = (int) numRead;
+                }
+                else if ((GetLastError() == ERROR_BROKEN_PIPE || GetLastError() == ERROR_PIPE_NOT_CONNECTED) && pimpl->isPipe)
+                {
+                    pimpl->disconnectPipe();
+                    waitAgain = true;
+                }
+            }
+            else if (pimpl->isPipe)
+            {
+                waitAgain = true;
+
+                if (lastError == ERROR_BROKEN_PIPE || lastError == ERROR_PIPE_NOT_CONNECTED)
+                    pimpl->disconnectPipe();
+                else
+                    Sleep (5);
+            }
+        }
+
+        CloseHandle (over.hEvent);
+    }
+
+    return bytesRead;
 }
 
 int NamedPipe::write (const void* sourceBuffer, int numBytesToWrite, int timeOutMilliseconds)
 {
-    ScopedReadLock sl (lock);
-    return pimpl != nullptr ? pimpl->write (sourceBuffer, numBytesToWrite, timeOutMilliseconds) : -1;
+    int bytesWritten = -1;
+
+    if (pimpl != nullptr && pimpl->connect (timeOutMilliseconds))
+    {
+        if (numBytesToWrite <= 0)
+            return 0;
+
+        OVERLAPPED over = { 0 };
+        over.hEvent = CreateEvent (0, TRUE, FALSE, 0);
+
+        unsigned long numWritten;
+
+        if (WriteFile (pimpl->pipeH, sourceBuffer, (DWORD) numBytesToWrite, &numWritten, &over))
+        {
+            bytesWritten = (int) numWritten;
+        }
+        else if (GetLastError() == ERROR_IO_PENDING)
+        {
+            HANDLE handles[] = { over.hEvent, pimpl->cancelEvent };
+            DWORD waitResult;
+
+            waitResult = WaitForMultipleObjects (2, handles, FALSE,
+                                                 timeOutMilliseconds >= 0 ? timeOutMilliseconds
+                                                                          : INFINITE);
+
+            if (waitResult != WAIT_OBJECT_0)
+            {
+                CancelIo (pimpl->pipeH);
+                WaitForSingleObject (over.hEvent, INFINITE);
+            }
+
+            if (GetOverlappedResult (pimpl->pipeH, &over, &numWritten, FALSE))
+            {
+                bytesWritten = (int) numWritten;
+            }
+            else if (GetLastError() == ERROR_BROKEN_PIPE && pimpl->isPipe)
+            {
+                pimpl->disconnectPipe();
+            }
+        }
+
+        CloseHandle (over.hEvent);
+    }
+
+    return bytesWritten;
 }

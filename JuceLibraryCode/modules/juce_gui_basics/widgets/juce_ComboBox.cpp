@@ -23,8 +23,8 @@
   ==============================================================================
 */
 
-ComboBox::ItemInfo::ItemInfo (const String& nm, int iid, bool enabled, bool heading)
-    : name (nm), itemId (iid), isEnabled (enabled), isHeading (heading)
+ComboBox::ItemInfo::ItemInfo (const String& name_, int itemId_, bool isEnabled_, bool isHeading_)
+    : name (name_), itemId (itemId_), isEnabled (isEnabled_), isHeading (isHeading_)
 {
 }
 
@@ -118,10 +118,10 @@ void ComboBox::addItem (const String& newItemText, const int newItemId)
     }
 }
 
-void ComboBox::addItemList (const StringArray& itemsToAdd, const int firstItemIdOffset)
+void ComboBox::addItemList (const StringArray& items, const int firstItemIdOffset)
 {
-    for (int i = 0; i < itemsToAdd.size(); ++i)
-        addItem (itemsToAdd[i], i + firstItemIdOffset);
+    for (int i = 0; i < items.size(); ++i)
+        addItem (items[i], i + firstItemIdOffset);
 }
 
 void ComboBox::addSeparator()
@@ -148,7 +148,9 @@ void ComboBox::addSectionHeading (const String& headingName)
 
 void ComboBox::setItemEnabled (const int itemId, const bool shouldBeEnabled)
 {
-    if (ItemInfo* const item = getItemForId (itemId))
+    ItemInfo* const item = getItemForId (itemId);
+
+    if (item != nullptr)
         item->isEnabled = shouldBeEnabled;
 }
 
@@ -160,10 +162,12 @@ bool ComboBox::isItemEnabled (int itemId) const noexcept
 
 void ComboBox::changeItemText (const int itemId, const String& newText)
 {
-    if (ItemInfo* const item = getItemForId (itemId))
+    ItemInfo* const item = getItemForId (itemId);
+
+    jassert (item != nullptr);
+
+    if (item != nullptr)
         item->name = newText;
-    else
-        jassertfalse;
 }
 
 void ComboBox::clear (const bool dontSendChangeMessage)
@@ -215,18 +219,16 @@ int ComboBox::getNumItems() const noexcept
 
 String ComboBox::getItemText (const int index) const
 {
-    if (const ItemInfo* const item = getItemForIndex (index))
-        return item->name;
+    const ItemInfo* const item = getItemForIndex (index);
 
-    return String::empty;
+    return item != nullptr ? item->name : String::empty;
 }
 
 int ComboBox::getItemId (const int index) const noexcept
 {
-    if (const ItemInfo* const item = getItemForIndex (index))
-        return item->itemId;
+    const ItemInfo* const item = getItemForIndex (index);
 
-    return 0;
+    return item != nullptr ? item->itemId : 0;
 }
 
 int ComboBox::indexOfItemId (const int itemId) const noexcept
@@ -290,13 +292,12 @@ void ComboBox::setSelectedId (const int newItemId, const bool dontSendChangeMess
 
 bool ComboBox::selectIfEnabled (const int index)
 {
-    if (const ItemInfo* const item = getItemForIndex (index))
+    const ItemInfo* const item = getItemForIndex (index);
+
+    if (item != nullptr && item->isEnabled)
     {
-        if (item->isEnabled)
-        {
-            setSelectedItemIndex (index);
-            return true;
-        }
+        setSelectedItemIndex (index);
+        return true;
     }
 
     return false;

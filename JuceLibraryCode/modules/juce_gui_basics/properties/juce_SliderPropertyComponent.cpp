@@ -71,7 +71,7 @@ double SliderPropertyComponent::getValue() const
 
 void SliderPropertyComponent::refresh()
 {
-    slider.setValue (getValue(), dontSendNotification);
+    slider.setValue (getValue(), false);
 }
 
 void SliderPropertyComponent::sliderValueChanged (Slider*)

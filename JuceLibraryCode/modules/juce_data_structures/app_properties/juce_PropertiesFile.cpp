@@ -103,31 +103,30 @@ File PropertiesFile::Options::getDefaultFile() const
 
 
 //==============================================================================
-PropertiesFile::PropertiesFile (const File& f, const Options& o)
-    : PropertySet (o.ignoreCaseOfKeyNames),
-      file (f), options (o),
+PropertiesFile::PropertiesFile (const File& file_, const Options& options_)
+    : PropertySet (options_.ignoreCaseOfKeyNames),
+      file (file_), options (options_),
       loadedOk (false), needsWriting (false)
 {
-    reload();
+    initialise();
 }
 
-PropertiesFile::PropertiesFile (const Options& o)
-    : PropertySet (o.ignoreCaseOfKeyNames),
-      file (o.getDefaultFile()), options (o),
+PropertiesFile::PropertiesFile (const Options& options_)
+    : PropertySet (options_.ignoreCaseOfKeyNames),
+      file (options_.getDefaultFile()), options (options_),
       loadedOk (false), needsWriting (false)
 {
-    reload();
+    initialise();
 }
 
-bool PropertiesFile::reload()
+void PropertiesFile::initialise()
 {
     ProcessScopedLock pl (createProcessLock());
 
     if (pl != nullptr && ! pl->isLocked())
-        return false; // locking failure..
+        return; // locking failure..
 
     loadedOk = (! file.exists()) || loadAsBinary() || loadAsXml();
-    return loadedOk;
 }
 
 PropertiesFile::~PropertiesFile()
@@ -171,8 +170,8 @@ bool PropertiesFile::save()
 
     if (options.storageFormat == storeAsXML)
         return saveAsXml();
-
-    return saveAsBinary();
+    else
+        return saveAsBinary();
 }
 
 bool PropertiesFile::loadAsXml()
@@ -223,7 +222,9 @@ bool PropertiesFile::saveAsXml()
         e->setAttribute (PropertyFileConstants::nameAttribute, getAllProperties().getAllKeys() [i]);
 
         // if the value seems to contain xml, store it as such..
-        if (XmlElement* const childElement = XmlDocument::parse (getAllProperties().getAllValues() [i]))
+        XmlElement* const childElement = XmlDocument::parse (getAllProperties().getAllValues() [i]);
+
+        if (childElement != nullptr)
             e->addChildElement (childElement);
         else
             e->setAttribute (PropertyFileConstants::valueAttribute,

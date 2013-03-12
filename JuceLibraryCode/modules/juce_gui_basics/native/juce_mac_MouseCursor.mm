@@ -41,12 +41,21 @@ namespace MouseCursorHelpers
         CGColorSpaceRelease (colourSpace);
 
         CGContextRef cg = (CGContextRef) [[NSGraphicsContext currentContext] graphicsPort];
-        CGContextDrawImage (cg, convertToCGRect (image.getBounds()), imageRef);
+        CGContextDrawImage (cg, CGRectMake (0, 0, image.getWidth(), image.getHeight()), imageRef);
 
         CGImageRelease (imageRef);
         [im unlockFocus];
 
         return im;
+    }
+
+    static void* createFromImage (const Image& image, float hotspotX, float hotspotY)
+    {
+        NSImage* im = createNSImage (image);
+        NSCursor* c = [[NSCursor alloc] initWithImage: im
+                                              hotSpot: NSMakePoint (hotspotX, hotspotY)];
+        [im release];
+        return c;
     }
 
     static void* fromWebKitFile (const char* filename, float hx, float hy)
@@ -58,21 +67,16 @@ namespace MouseCursorHelpers
         Image im (pngFormat.decodeImage (buf));
 
         if (im.isValid())
-            return CustomMouseCursorInfo (im, (int) (hx * im.getWidth()),
-                                              (int) (hy * im.getHeight())).create();
+            return createFromImage (im, hx * im.getWidth(), hy * im.getHeight());
 
         jassertfalse;
         return nullptr;
     }
 }
 
-void* CustomMouseCursorInfo::create() const
+void* MouseCursor::createMouseCursorFromImage (const Image& image, int hotspotX, int hotspotY)
 {
-    NSImage* im = MouseCursorHelpers::createNSImage (image);
-    NSCursor* c = [[NSCursor alloc] initWithImage: im
-                                          hotSpot: NSMakePoint (hotspot.x, hotspot.y)];
-    [im release];
-    return c;
+    return MouseCursorHelpers::createFromImage (image, (float) hotspotX, (float) hotspotY);
 }
 
 void* MouseCursor::createStandardMouseCursor (MouseCursor::StandardCursorType type)
@@ -84,7 +88,7 @@ void* MouseCursor::createStandardMouseCursor (MouseCursor::StandardCursorType ty
     {
         case NormalCursor:
         case ParentCursor:          c = [NSCursor arrowCursor]; break;
-        case NoCursor:              return CustomMouseCursorInfo (Image (Image::ARGB, 8, 8, true), 0, 0).create();
+        case NoCursor:              return createMouseCursorFromImage (Image (Image::ARGB, 8, 8, true), 0, 0);
         case DraggingHandCursor:    c = [NSCursor openHandCursor]; break;
         case WaitCursor:            c = [NSCursor arrowCursor]; break; // avoid this on the mac, let the OS provide the beachball
         case IBeamCursor:           c = [NSCursor IBeamCursor]; break;
@@ -142,10 +146,10 @@ void MouseCursor::showInWindow (ComponentPeer*) const
 
 #else
 
-void* CustomMouseCursorInfo::create() const                                              { return nullptr; }
-void* MouseCursor::createStandardMouseCursor (MouseCursor::StandardCursorType type)      { return nullptr; }
-void MouseCursor::deleteMouseCursor (void* const cursorHandle, const bool isStandard)    {}
-void MouseCursor::showInAllWindows() const                                               {}
-void MouseCursor::showInWindow (ComponentPeer*) const                                    {}
+void* MouseCursor::createMouseCursorFromImage (const Image& image, int hotspotX, int hotspotY)  { return nullptr; }
+void* MouseCursor::createStandardMouseCursor (MouseCursor::StandardCursorType type)             { return nullptr; }
+void MouseCursor::deleteMouseCursor (void* const cursorHandle, const bool isStandard)           {}
+void MouseCursor::showInAllWindows() const                                                      {}
+void MouseCursor::showInWindow (ComponentPeer*) const                                           {}
 
 #endif

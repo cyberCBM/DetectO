@@ -158,13 +158,13 @@ StringArray Font::findAllTypefaceStyles (const String& family)
     return results;
 }
 
-extern bool juce_isRunningInWine();
+extern bool juce_IsRunningInWine();
 
 struct DefaultFontNames
 {
     DefaultFontNames()
     {
-        if (juce_isRunningInWine())
+        if (juce_IsRunningInWine())
         {
             // If we're running in Wine, then use fonts that might be available on Linux..
             defaultSans     = "Bitstream Vera Sans";
@@ -210,14 +210,13 @@ public:
           fontH (0),
           previousFontH (0),
           dc (CreateCompatibleDC (0)),
-          ascent (1.0f), heightToPointsFactor (1.0f),
+          ascent (1.0f),
           defaultGlyph (-1)
     {
         loadFont();
 
         if (GetTextMetrics (dc, &tm))
         {
-            heightToPointsFactor = (72.0f / GetDeviceCaps (dc, LOGPIXELSY)) * heightInPoints / (float) tm.tmHeight;
             ascent = tm.tmAscent / (float) tm.tmHeight;
             defaultGlyph = getGlyphForChar (dc, tm.tmDefaultChar);
             createKerningPairs (dc, (float) tm.tmHeight);
@@ -233,9 +232,8 @@ public:
             DeleteObject (fontH);
     }
 
-    float getAscent() const                 { return ascent; }
-    float getDescent() const                { return 1.0f - ascent; }
-    float getHeightToPointsFactor() const   { return heightToPointsFactor; }
+    float getAscent() const     { return ascent; }
+    float getDescent() const    { return 1.0f - ascent; }
 
     float getStringWidth (const String& text)
     {
@@ -354,8 +352,8 @@ private:
     HGDIOBJ previousFontH;
     HDC dc;
     TEXTMETRIC tm;
-    float ascent, heightToPointsFactor;
-    int defaultGlyph, heightInPoints;
+    float ascent;
+    int defaultGlyph;
 
     struct KerningPair
     {
@@ -403,8 +401,7 @@ private:
                 OUTLINETEXTMETRIC otm;
                 if (GetOutlineTextMetrics (dc, sizeof (otm), &otm) != 0)
                 {
-                    heightInPoints = otm.otmEMSquare;
-                    lf.lfHeight = -(int) heightInPoints;
+                    lf.lfHeight = -(int) otm.otmEMSquare;
                     fontH = CreateFontIndirect (&lf);
 
                     SelectObject (dc, fontH);
@@ -483,7 +480,7 @@ private:
         return kerningPairs.getReference (index).kerning;
     }
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (WindowsTypeface)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (WindowsTypeface);
 };
 
 const MAT2 WindowsTypeface::identityMatrix = { { 0, 1 }, { 0, 0 }, { 0, 0 }, { 0, 1 } };
@@ -495,7 +492,7 @@ Typeface::Ptr Typeface::createSystemTypefaceFor (const Font& font)
 
     if (factories.systemFonts != nullptr)
         return new WindowsDirectWriteTypeface (font, factories.systemFonts);
+    else
    #endif
-
-    return new WindowsTypeface (font);
+        return new WindowsTypeface (font);
 }

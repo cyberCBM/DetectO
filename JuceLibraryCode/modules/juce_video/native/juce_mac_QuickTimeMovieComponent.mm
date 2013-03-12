@@ -87,7 +87,9 @@ static QTMovie* openMovieFromStream (InputStream* movieStream, File& movieFile)
 
     QTMovie* movie = nil;
 
-    if (FileInputStream* const fin = dynamic_cast <FileInputStream*> (movieStream))
+    FileInputStream* const fin = dynamic_cast <FileInputStream*> (movieStream);
+
+    if (fin != nullptr)
     {
         movieFile = fin->getFile();
         movie = [QTMovie movieWithFile: juceStringToNS (movieFile.getFullPathName())
@@ -116,15 +118,15 @@ static QTMovie* openMovieFromStream (InputStream* movieStream, File& movieFile)
     return movie;
 }
 
-bool QuickTimeMovieComponent::loadMovie (const File& file, const bool showController)
+bool QuickTimeMovieComponent::loadMovie (const File& movieFile_,
+                                         const bool isControllerVisible_)
 {
-    return loadMovie (file.createInputStream(), showController);
+    return loadMovie ((InputStream*) movieFile_.createInputStream(), isControllerVisible_);
 }
 
-bool QuickTimeMovieComponent::loadMovie (InputStream* movieStream, const bool showController)
+bool QuickTimeMovieComponent::loadMovie (InputStream* movieStream,
+                                         const bool controllerVisible_)
 {
-    const ScopedPointer<InputStream> movieStreamDeleter (movieStream);
-
     closeMovie();
 
     if (getPeer() == nullptr)
@@ -135,23 +137,19 @@ bool QuickTimeMovieComponent::loadMovie (InputStream* movieStream, const bool sh
         return false;
     }
 
-    if (movieStream == nullptr)
-        return false;
-
     movie = openMovieFromStream (movieStream, movieFile);
 
     [theMovie retain];
     QTMovieView* view = (QTMovieView*) getView();
     [view setMovie: theMovie];
-
-    controllerVisible = showController;
-    [view setControllerVisible: controllerVisible];
+    [view setControllerVisible: controllerVisible_];
     setLooping (looping);
 
     return movie != nil;
 }
 
-bool QuickTimeMovieComponent::loadMovie (const URL& movieURL, const bool showController)
+bool QuickTimeMovieComponent::loadMovie (const URL& movieURL,
+                                         const bool isControllerVisible_)
 {
     // unfortunately, QTMovie objects can only be created on the main thread..
     jassert (MessageManager::getInstance()->isThisTheMessageThread());
@@ -174,8 +172,6 @@ bool QuickTimeMovieComponent::loadMovie (const URL& movieURL, const bool showCon
     [theMovie retain];
     QTMovieView* view = (QTMovieView*) getView();
     [view setMovie: theMovie];
-
-    controllerVisible = showController;
     [view setControllerVisible: controllerVisible];
     setLooping (looping);
 
@@ -312,7 +308,7 @@ void QuickTimeMovieComponent::setBoundsWithCorrectAspectRatio (const Rectangle<i
     int normalWidth, normalHeight;
     getMovieNormalSize (normalWidth, normalHeight);
 
-    const Rectangle<int> normalSize (normalWidth, normalHeight);
+    const Rectangle<int> normalSize (0, 0, normalWidth, normalHeight);
 
     if (! (spaceToFitWithin.isEmpty() || normalSize.isEmpty()))
         setBounds (placement.appliedTo (normalSize, spaceToFitWithin));

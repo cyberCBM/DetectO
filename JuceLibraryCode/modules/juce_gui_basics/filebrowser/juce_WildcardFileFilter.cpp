@@ -25,9 +25,9 @@
 
 WildcardFileFilter::WildcardFileFilter (const String& fileWildcardPatterns,
                                         const String& directoryWildcardPatterns,
-                                        const String& desc)
-    : FileFilter (desc.isEmpty() ? fileWildcardPatterns
-                                 : (desc + " (" + fileWildcardPatterns + ")"))
+                                        const String& description_)
+    : FileFilter (description_.isEmpty() ? fileWildcardPatterns
+                                         : (description_ + " (" + fileWildcardPatterns + ")"))
 {
     parse (fileWildcardPatterns, fileWildcards);
     parse (directoryWildcardPatterns, directoryWildcards);

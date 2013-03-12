@@ -96,6 +96,7 @@ public:
     Component& getComponent() noexcept                      { return component; }
 
     /** Returns the set of style flags that were set when the window was created.
+
         @see Component::addToDesktop
     */
     int getStyleFlags() const noexcept                      { return styleFlags; }
@@ -119,15 +120,6 @@ public:
     /** Changes the title of the window. */
     virtual void setTitle (const String& title) = 0;
 
-    /** If this type of window is capable of indicating that the document in it has been
-        edited, then this changes its status.
-
-        For example in OSX, this changes the appearance of the close button.
-        @returns true if the window has a mechanism for showing this, or false if not.
-    */
-    virtual bool setDocumentEditedStatus (bool edited);
-
-    //==============================================================================
     /** Moves the window without changing its size.
 
         If the native window is contained in another window, then the co-ordinates are
@@ -138,6 +130,7 @@ public:
     virtual void setPosition (int x, int y) = 0;
 
     /** Resizes the window without changing its position.
+
         This should result in a callback to handleMovedOrResized().
     */
     virtual void setSize (int w, int h) = 0;
@@ -191,10 +184,12 @@ public:
     /** Returns the size to restore to if fullscreen mode is turned off. */
     const Rectangle<int>& getNonFullScreenBounds() const noexcept;
 
-    /** Attempts to change the icon associated with this window. */
+    /** Attempts to change the icon associated with this window.
+    */
     virtual void setIcon (const Image& newIcon) = 0;
 
     /** Sets a constrainer to use if the peer can resize itself.
+
         The constrainer won't be deleted by this object, so the caller must manage its lifetime.
     */
     void setConstrainer (ComponentBoundsConstrainer* newConstrainer) noexcept;
@@ -211,18 +206,21 @@ public:
     virtual bool contains (const Point<int>& position, bool trueIfInAChildWindow) const = 0;
 
     /** Returns the size of the window frame that's around this window.
+
         Whether or not the window has a normal window frame depends on the flags
         that were set when the window was created by Component::addToDesktop()
     */
     virtual BorderSize<int> getFrameSize() const = 0;
 
     /** This is called when the window's bounds change.
+
         A peer implementation must call this when the window is moved and resized, so that
         this method can pass the message on to the component.
     */
     void handleMovedOrResized();
 
     /** This is called if the screen resolution changes.
+
         A peer implementation must call this if the monitor arrangement changes or the available
         screen size changes.
     */
@@ -234,6 +232,7 @@ public:
 
     //==============================================================================
     /** Sets this window to either be always-on-top or normal.
+
         Some kinds of window might not be able to do this, so should return false.
     */
     virtual bool setAlwaysOnTop (bool alwaysOnTop) = 0;
@@ -264,6 +263,7 @@ public:
     Component* getLastFocusedSubcomponent() const noexcept;
 
     /** Called when a key is pressed.
+
         For keycode info, see the KeyPress class.
         Returns true if the keystroke was used.
     */
@@ -316,9 +316,6 @@ public:
         StringArray files;
         String text;
         Point<int> position;
-
-        bool isEmpty() const noexcept       { return files.size() == 0 && text.isEmpty(); }
-        void clear() noexcept               { files.clear(); text = String::empty; }
     };
 
     bool handleDragMove (const DragInfo&);
@@ -354,13 +351,11 @@ public:
     */
     static ComponentPeer* getPeer (int index) noexcept;
 
-    /** Returns the peer that's attached to the given component, or nullptr if there isn't one. */
-    static ComponentPeer* getPeerFor (const Component*) noexcept;
-
     /** Checks if this peer object is valid.
         @see getNumPeers
     */
     static bool isValidPeer (const ComponentPeer* peer) noexcept;
+
 
     //==============================================================================
     virtual StringArray getAvailableRenderingEngines();
@@ -373,6 +368,7 @@ protected:
     const int styleFlags;
     RectangleList maskedRegion;
     Rectangle<int> lastNonFullscreenBounds;
+    uint32 lastPaintTime;
     ComponentBoundsConstrainer* constrainer;
 
     static void updateCurrentModifiers() noexcept;
@@ -382,10 +378,17 @@ private:
     WeakReference<Component> lastFocusedComponent, dragAndDropTargetComponent;
     Component* lastDragAndDropCompUnderMouse;
     const uint32 uniqueID;
-    bool fakeMouseMessageSent, isWindowMinimised;
+    bool fakeMouseMessageSent : 1, isWindowMinimised : 1;
+
+    friend class Component;
+    friend class Desktop;
+    static ComponentPeer* getPeerFor (const Component*) noexcept;
     Component* getTargetForKeyPress();
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ComponentPeer)
+    void setLastDragDropTarget (Component*);
+    bool finishDrag (bool);
+
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ComponentPeer);
 };
 
 

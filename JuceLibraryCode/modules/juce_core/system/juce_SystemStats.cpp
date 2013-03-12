@@ -48,11 +48,7 @@ String SystemStats::getJUCEVersion()
                 "." JUCE_STRINGIFY(JUCE_BUILDNUMBER);
 }
 
-#if JUCE_ANDROID && ! defined (JUCE_DISABLE_JUCE_VERSION_PRINTING)
- #define JUCE_DISABLE_JUCE_VERSION_PRINTING 1
-#endif
-
-#if JUCE_DEBUG && ! JUCE_DISABLE_JUCE_VERSION_PRINTING
+#if JUCE_DEBUG && ! JUCE_ANDROID
  struct JuceVersionPrinter
  {
      JuceVersionPrinter()

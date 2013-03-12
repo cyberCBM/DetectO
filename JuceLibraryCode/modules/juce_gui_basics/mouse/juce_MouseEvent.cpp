@@ -23,26 +23,26 @@
   ==============================================================================
 */
 
-MouseEvent::MouseEvent (MouseInputSource& inputSource,
+MouseEvent::MouseEvent (MouseInputSource& source_,
                         const Point<int>& position,
-                        const ModifierKeys& modKeys,
-                        Component* const eventComp,
+                        const ModifierKeys& mods_,
+                        Component* const eventComponent_,
                         Component* const originator,
-                        const Time& time,
-                        const Point<int>& downPos,
-                        const Time& downTime,
-                        const int numClicks,
+                        const Time& eventTime_,
+                        const Point<int> mouseDownPos_,
+                        const Time& mouseDownTime_,
+                        const int numberOfClicks_,
                         const bool mouseWasDragged) noexcept
     : x (position.x),
       y (position.y),
-      mods (modKeys),
-      eventComponent (eventComp),
+      mods (mods_),
+      eventComponent (eventComponent_),
       originalComponent (originator),
-      eventTime (time),
-      mouseDownTime (downTime),
-      source (inputSource),
-      mouseDownPos (downPos),
-      numberOfClicks ((uint8) numClicks),
+      eventTime (eventTime_),
+      source (source_),
+      mouseDownPos (mouseDownPos_),
+      mouseDownTime (mouseDownTime_),
+      numberOfClicks ((uint8) numberOfClicks_),
       wasMovedSinceMouseDown ((uint8) (mouseWasDragged ? 1 : 0))
 {
 }

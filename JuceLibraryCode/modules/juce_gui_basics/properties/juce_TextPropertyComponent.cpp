@@ -23,15 +23,15 @@
   ==============================================================================
 */
 
-class TextPropertyComponent::LabelComp  : public Label,
-                                          public FileDragAndDropTarget
+class TextPropertyComponent::LabelComp  : public Label
 {
 public:
-    LabelComp (TextPropertyComponent& tpc, const int charLimit, const bool multiline)
+    LabelComp (TextPropertyComponent& owner_,
+               const int maxChars_, const bool isMultiline_)
         : Label (String::empty, String::empty),
-          owner (tpc),
-          maxChars (charLimit),
-          isMultiline (multiline)
+          owner (owner_),
+          maxChars (maxChars_),
+          isMultiline (isMultiline_)
     {
         setEditable (true, true, false);
 
@@ -40,29 +40,18 @@ public:
         setColour (textColourId,       owner.findColour (TextPropertyComponent::textColourId));
     }
 
-    bool isInterestedInFileDrag (const StringArray&)
-    {
-        return true;
-    }
-
-    void filesDropped (const StringArray& files, int, int)
-    {
-        setText (getText() + files.joinIntoString (isMultiline ? "\n" : ", "), true);
-        showEditor();
-    }
-
     TextEditor* createEditorComponent()
     {
-        TextEditor* const ed = Label::createEditorComponent();
-        ed->setInputRestrictions (maxChars);
+        TextEditor* const textEditor = Label::createEditorComponent();
+        textEditor->setInputRestrictions (maxChars);
 
         if (isMultiline)
         {
-            ed->setMultiLine (true, true);
-            ed->setReturnKeyStartsNewLine (true);
+            textEditor->setMultiLine (true, true);
+            textEditor->setReturnKeyStartsNewLine (true);
         }
 
-        return ed;
+        return textEditor;
     }
 
     void textWasEdited()

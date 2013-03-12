@@ -26,6 +26,7 @@
 CaretComponent::CaretComponent (Component* const keyFocusOwner)
     : owner (keyFocusOwner)
 {
+    setAlwaysOnTop (true);
     setInterceptsMouseClicks (false, false);
 }
 
@@ -52,6 +53,6 @@ void CaretComponent::setCaretPosition (const Rectangle<int>& characterArea)
 
 bool CaretComponent::shouldBeShown() const
 {
-    return owner == nullptr || (owner->hasKeyboardFocus (false)
+    return owner == nullptr || (owner->hasKeyboardFocus (true)
                                  && ! owner->isCurrentlyBlockedByAnotherModalComponent());
 }

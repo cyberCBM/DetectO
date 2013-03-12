@@ -72,8 +72,8 @@ void DrawableRectangle::rebuildPath()
     }
     else
     {
-        setPositioner (nullptr);
-        recalculateCoordinates (nullptr);
+        setPositioner (0);
+        recalculateCoordinates (0);
     }
 }
 

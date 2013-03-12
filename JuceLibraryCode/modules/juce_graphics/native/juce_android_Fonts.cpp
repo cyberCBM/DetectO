@@ -89,16 +89,14 @@ Typeface::Ptr Font::getDefaultTypefaceForFont (const Font& font)
     return Typeface::createSystemTypefaceFor (f);
 }
 
-const float referenceFontSize = 256.0f;
-const float referenceFontToUnits = 1.0f / referenceFontSize;
-
 //==============================================================================
 class AndroidTypeface   : public Typeface
 {
 public:
     AndroidTypeface (const Font& font)
         : Typeface (font.getTypefaceName(), font.getTypefaceStyle()),
-          ascent (0), descent (0), heightToPointsFactor (1.0f)
+          ascent (0),
+          descent (0)
     {
         JNIEnv* const env = getEnv();
 
@@ -123,20 +121,17 @@ public:
         paint = GlobalRef (GraphicsHelpers::createPaint (Graphics::highResamplingQuality));
         const LocalRef<jobject> ignored (paint.callObjectMethod (Paint.setTypeface, typeface.get()));
 
-        paint.callVoidMethod (Paint.setTextSize, referenceFontSize);
+        const float standardSize = 256.0f;
+        paint.callVoidMethod (Paint.setTextSize, standardSize);
+        ascent = std::abs (paint.callFloatMethod (Paint.ascent)) / standardSize;
+        descent = paint.callFloatMethod (Paint.descent) / standardSize;
 
-        const float fullAscent = std::abs (paint.callFloatMethod (Paint.ascent));
-        const float fullDescent = paint.callFloatMethod (Paint.descent);
-        const float totalHeight = fullAscent + fullDescent;
-
-        ascent  = fullAscent / totalHeight;
-        descent = fullDescent / totalHeight;
-        heightToPointsFactor = referenceFontSize / totalHeight;
+        const float height = ascent + descent;
+        unitsToHeightScaleFactor = 1.0f / 256.0f;
     }
 
-    float getAscent() const                 { return ascent; }
-    float getDescent() const                { return descent; }
-    float getHeightToPointsFactor() const   { return heightToPointsFactor; }
+    float getAscent() const    { return ascent; }
+    float getDescent() const   { return descent; }
 
     float getStringWidth (const String& text)
     {
@@ -154,7 +149,7 @@ public:
         for (int i = 0; i < numDone; ++i)
             x += localWidths[i];
 
-        return x * referenceFontToUnits;
+        return x * unitsToHeightScaleFactor;
     }
 
     void getGlyphPositions (const String& text, Array<int>& glyphs, Array<float>& xOffsets)
@@ -178,7 +173,7 @@ public:
         {
             glyphs.add ((int) s.getAndAdvance());
             x += localWidths[i];
-            xOffsets.add (x * referenceFontToUnits);
+            xOffsets.add (x * unitsToHeightScaleFactor);
         }
     }
 
@@ -191,7 +186,7 @@ public:
     {
         JNIEnv* env = getEnv();
 
-        jobject matrix = GraphicsHelpers::createMatrix (env, AffineTransform::scale (referenceFontToUnits).followedBy (t));
+        jobject matrix = GraphicsHelpers::createMatrix (env, AffineTransform::scale (unitsToHeightScaleFactor, unitsToHeightScaleFactor).followedBy (t));
         jintArray maskData = (jintArray) android.activity.callObjectMethod (JuceAppActivity.renderGlyph, (jchar) glyphNumber, paint.get(), matrix, rect.get());
 
         env->DeleteLocalRef (matrix);
@@ -232,7 +227,7 @@ public:
     }
 
     GlobalRef typeface, paint, rect;
-    float ascent, descent, heightToPointsFactor;
+    float ascent, descent, unitsToHeightScaleFactor;
 
 private:
     static File findFontFile (const String& family,
@@ -270,7 +265,7 @@ private:
         return File (path + ".ttf");
     }
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AndroidTypeface)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AndroidTypeface);
 };
 
 //==============================================================================

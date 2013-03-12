@@ -220,7 +220,7 @@ public:
 
     /** Returns one of the elements in the array.
         If the index passed in is beyond the range of valid elements, this
-        will return a default value.
+        will return zero.
 
         If you're certain that the index will always be a valid element, you
         can call getUnchecked() instead, which is faster.
@@ -267,7 +267,7 @@ public:
         return data.elements [index];
     }
 
-    /** Returns the first element in the array, or a default value if the array is empty.
+    /** Returns the first element in the array, or 0 if the array is empty.
 
         @see operator[], getUnchecked, getLast
     */
@@ -278,7 +278,7 @@ public:
                              : ElementType();
     }
 
-    /** Returns the last element in the array, or a default value if the array is empty.
+    /** Returns the last element in the array, or 0 if the array is empty.
 
         @see operator[], getUnchecked, getFirst
     */
@@ -571,7 +571,7 @@ public:
         const ScopedLockType lock2 (otherArray.getLock());
 
         data.swapWith (otherArray.data);
-        std::swap (numUsed, otherArray.numUsed);
+        swapVariables (numUsed, otherArray.numUsed);
     }
 
     /** Adds elements from another array to the end of this array.
@@ -770,9 +770,10 @@ public:
     void removeAllInstancesOf (ParameterType valueToRemove)
     {
         const ScopedLockType lock (getLock());
+        ElementType* const e = data.elements;
 
         for (int i = numUsed; --i >= 0;)
-            if (valueToRemove == data.elements[i])
+            if (valueToRemove == e[i])
                 remove (i);
     }
 
@@ -900,8 +901,8 @@ public:
         if (isPositiveAndBelow (index1, numUsed)
              && isPositiveAndBelow (index2, numUsed))
         {
-            std::swap (data.elements [index1],
-                       data.elements [index2]);
+            swapVariables (data.elements [index1],
+                           data.elements [index2]);
         }
     }
 

@@ -28,7 +28,8 @@ Message::~Message() {}
 
 void Message::messageCallback()
 {
-    if (MessageListener* const r = recipient)
+    MessageListener* const r = recipient;
+    if (r != nullptr)
         r->handleMessage (*this);
 }
 

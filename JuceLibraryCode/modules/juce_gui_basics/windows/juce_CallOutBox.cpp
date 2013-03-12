@@ -36,7 +36,8 @@ CallOutBox::CallOutBox (Component& c, const Rectangle<int>& area, Component* con
     }
     else
     {
-        setAlwaysOnTop (juce_areThereAnyAlwaysOnTopWindows());
+        if (! JUCEApplication::isStandaloneApp())
+            setAlwaysOnTop (true); // for a plugin, make it always-on-top because the host windows are often top-level
 
         updatePosition (area, Desktop::getInstance().getDisplays()
                                 .getDisplayContaining (area.getCentre()).userArea);
@@ -65,7 +66,7 @@ public:
     ScopedPointer<Component> content;
     CallOutBox callout;
 
-    JUCE_DECLARE_NON_COPYABLE (CallOutBoxCallback)
+    JUCE_DECLARE_NON_COPYABLE (CallOutBoxCallback);
 };
 
 CallOutBox& CallOutBox::launchAsynchronously (Component* content,
@@ -191,7 +192,7 @@ void CallOutBox::updatePosition (const Rectangle<int>& newAreaToPointTo, const R
         float distanceFromCentre = centre.getDistanceFrom (targets[i]);
 
         if (! (centrePointArea.contains (lines[i].getStart()) || centrePointArea.contains (lines[i].getEnd())))
-            distanceFromCentre += 1000.0f;
+            distanceFromCentre *= 50.0f;
 
         if (distanceFromCentre < nearest)
         {

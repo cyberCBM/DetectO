@@ -23,113 +23,39 @@
   ==============================================================================
 */
 
-class SharedValueSourceUpdater  : public ReferenceCountedObject,
-                                  private AsyncUpdater
-{
-public:
-    SharedValueSourceUpdater() : sourcesBeingIterated (nullptr) {}
-    ~SharedValueSourceUpdater()  { masterReference.clear(); }
-
-    void update (Value::ValueSource* const source)
-    {
-        sourcesNeedingAnUpdate.add (source);
-
-        if (sourcesBeingIterated == nullptr)
-            triggerAsyncUpdate();
-    }
-
-    void valueDeleted (Value::ValueSource* const source)
-    {
-        sourcesNeedingAnUpdate.removeValue (source);
-
-        if (sourcesBeingIterated != nullptr)
-            sourcesBeingIterated->removeValue (source);
-    }
-
-    WeakReference<SharedValueSourceUpdater>::Master masterReference;
-
-private:
-    typedef SortedSet<Value::ValueSource*> SourceSet;
-    SourceSet sourcesNeedingAnUpdate;
-    SourceSet* sourcesBeingIterated;
-
-    void handleAsyncUpdate()
-    {
-        const ReferenceCountedObjectPtr<SharedValueSourceUpdater> localRef (this);
-
-        {
-            const ScopedValueSetter<SourceSet*> inside (sourcesBeingIterated, nullptr, nullptr);
-            int maxLoops = 10;
-
-            while (sourcesNeedingAnUpdate.size() > 0)
-            {
-                if (--maxLoops == 0)
-                {
-                    triggerAsyncUpdate();
-                    break;
-                }
-
-                SourceSet sources;
-                sources.swapWith (sourcesNeedingAnUpdate);
-                sourcesBeingIterated = &sources;
-
-                for (int i = sources.size(); --i >= 0;)
-                    if (i < sources.size())
-                        sources.getUnchecked(i)->sendChangeMessage (true);
-            }
-        }
-    }
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SharedValueSourceUpdater)
-};
-
-static WeakReference<SharedValueSourceUpdater> sharedUpdater;
-
 Value::ValueSource::ValueSource()
 {
 }
 
 Value::ValueSource::~ValueSource()
 {
-    if (asyncUpdater != nullptr)
-        static_cast <SharedValueSourceUpdater*> (asyncUpdater.get())->valueDeleted (this);
 }
 
 void Value::ValueSource::sendChangeMessage (const bool synchronous)
 {
-    const int numListeners = valuesWithListeners.size();
-
-    if (numListeners > 0)
+    if (synchronous)
     {
-        if (synchronous)
+        // (hold a local reference to this object in case it's freed during the callbacks)
+        const ReferenceCountedObjectPtr<ValueSource> localRef (this);
+
+        for (int i = valuesWithListeners.size(); --i >= 0;)
         {
-            const ReferenceCountedObjectPtr<ValueSource> localRef (this);
-            asyncUpdater = nullptr;
+            Value* const v = valuesWithListeners[i];
 
-            for (int i = numListeners; --i >= 0;)
-                if (Value* const v = valuesWithListeners[i])
-                    v->callListeners();
-        }
-        else
-        {
-            SharedValueSourceUpdater* updater = static_cast <SharedValueSourceUpdater*> (asyncUpdater.get());
-
-            if (updater == nullptr)
-            {
-                if (sharedUpdater == nullptr)
-                {
-                    asyncUpdater = updater = new SharedValueSourceUpdater();
-                    sharedUpdater = updater;
-                }
-                else
-                {
-                    asyncUpdater = updater = sharedUpdater.get();
-                }
-            }
-
-            updater->update (this);
+            if (v != nullptr)
+                v->callListeners();
         }
     }
+    else
+    {
+        if (valuesWithListeners.size() > 0)
+            triggerAsyncUpdate();
+    }
+}
+
+void Value::ValueSource::handleAsyncUpdate()
+{
+    sendChangeMessage (true);
 }
 
 //==============================================================================
@@ -162,7 +88,7 @@ public:
 private:
     var value;
 
-    JUCE_DECLARE_NON_COPYABLE (SimpleValueSource)
+    JUCE_DECLARE_NON_COPYABLE (SimpleValueSource);
 };
 
 
@@ -292,11 +218,8 @@ void Value::removeListener (ValueListener* const listener)
 
 void Value::callListeners()
 {
-    if (listeners.size() > 0)
-    {
-        Value v (*this); // (create a copy in case this gets deleted by a callback)
-        listeners.call (&ValueListener::valueChanged, v);
-    }
+    Value v (*this); // (create a copy in case this gets deleted by a callback)
+    listeners.call (&ValueListener::valueChanged, v);
 }
 
 OutputStream& JUCE_CALLTYPE operator<< (OutputStream& stream, const Value& value)

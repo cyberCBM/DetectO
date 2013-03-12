@@ -129,7 +129,14 @@ public:
     /** Asynchronously causes a repaint to be made. */
     void triggerRepaint();
 
+
     //==============================================================================
+    /** Returns the width of this context */
+    inline int getWidth() const noexcept                    { return width; }
+
+    /** Returns the height of this context */
+    inline int getHeight() const noexcept                   { return height; }
+
     /** If this context is backed by a frame buffer, this returns its ID number,
         or 0 if the context does not use a framebuffer.
     */
@@ -238,11 +245,12 @@ private:
     ScopedPointer<Attachment> attachment;
     OpenGLPixelFormat pixelFormat;
     void* contextToShareWith;
+    int width, height;
     bool renderComponents;
 
     CachedImage* getCachedImage() const noexcept;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (OpenGLContext)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (OpenGLContext);
 };
 
 

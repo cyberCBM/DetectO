@@ -26,7 +26,10 @@
 class AsyncUpdater::AsyncUpdaterMessage  : public CallbackMessage
 {
 public:
-    AsyncUpdaterMessage (AsyncUpdater& au)  : owner (au) {}
+    AsyncUpdaterMessage (AsyncUpdater& owner_)
+        : owner (owner_)
+    {
+    }
 
     void messageCallback()
     {
@@ -39,7 +42,7 @@ public:
 private:
     AsyncUpdater& owner;
 
-    JUCE_DECLARE_NON_COPYABLE (AsyncUpdaterMessage)
+    JUCE_DECLARE_NON_COPYABLE (AsyncUpdaterMessage);
 };
 
 //==============================================================================

@@ -455,7 +455,8 @@ namespace PathStrokeHelpers
                 addLineEnd (destPath, endStyle, firstLine.rx2, firstLine.ry2, lastX1, lastY1, width);
         }
 
-        for (int i = 1; i < subPath.size(); ++i)
+        int i;
+        for (i = 1; i < subPath.size(); ++i)
         {
             const LineSection& l = subPath.getReference (i);
 
@@ -502,7 +503,7 @@ namespace PathStrokeHelpers
         lastX2 = lastLine.rx2;
         lastY2 = lastLine.ry2;
 
-        for (int i = subPath.size() - 1; --i >= 0;)
+        for (i = subPath.size() - 1; --i >= 0;)
         {
             const LineSection& l = subPath.getReference (i);
 

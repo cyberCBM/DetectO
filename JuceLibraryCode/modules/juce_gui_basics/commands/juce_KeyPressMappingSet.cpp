@@ -23,15 +23,18 @@
   ==============================================================================
 */
 
-KeyPressMappingSet::KeyPressMappingSet (ApplicationCommandManager& cm)
-    : commandManager (cm)
+KeyPressMappingSet::KeyPressMappingSet (ApplicationCommandManager* const commandManager_)
+    : commandManager (commandManager_)
 {
+    // A manager is needed to get the descriptions of commands, and will be called when
+    // a command is invoked. So you can't leave this null..
+    jassert (commandManager_ != nullptr);
+
     Desktop::getInstance().addFocusChangeListener (this);
 }
 
 KeyPressMappingSet::KeyPressMappingSet (const KeyPressMappingSet& other)
-    : ChangeBroadcaster(),
-      commandManager (other.commandManager)
+    : commandManager (other.commandManager)
 {
     Desktop::getInstance().addFocusChangeListener (this);
 }
@@ -75,7 +78,9 @@ void KeyPressMappingSet::addKeyPress (const CommandID commandID,
                 }
             }
 
-            if (const ApplicationCommandInfo* const ci = commandManager.getCommandForID (commandID))
+            const ApplicationCommandInfo* const ci = commandManager->getCommandForID (commandID);
+
+            if (ci != nullptr)
             {
                 CommandMapping* const cm = new CommandMapping();
                 cm->commandID = commandID;
@@ -93,9 +98,9 @@ void KeyPressMappingSet::resetToDefaultMappings()
 {
     mappings.clear();
 
-    for (int i = 0; i < commandManager.getNumCommands(); ++i)
+    for (int i = 0; i < commandManager->getNumCommands(); ++i)
     {
-        const ApplicationCommandInfo* const ci = commandManager.getCommandForIndex (i);
+        const ApplicationCommandInfo* const ci = commandManager->getCommandForIndex (i);
 
         for (int j = 0; j < ci->defaultKeypresses.size(); ++j)
         {
@@ -111,7 +116,7 @@ void KeyPressMappingSet::resetToDefaultMapping (const CommandID commandID)
 {
     clearAllKeyPresses (commandID);
 
-    const ApplicationCommandInfo* const ci = commandManager.getCommandForID (commandID);
+    const ApplicationCommandInfo* const ci = commandManager->getCommandForID (commandID);
 
     for (int j = 0; j < ci->defaultKeypresses.size(); ++j)
     {
@@ -147,13 +152,13 @@ void KeyPressMappingSet::removeKeyPress (const KeyPress& keypress)
     {
         for (int i = mappings.size(); --i >= 0;)
         {
-            CommandMapping& cm = *mappings.getUnchecked(i);
+            CommandMapping* const cm = mappings.getUnchecked(i);
 
-            for (int j = cm.keypresses.size(); --j >= 0;)
+            for (int j = cm->keypresses.size(); --j >= 0;)
             {
-                if (keypress == cm.keypresses [j])
+                if (keypress == cm->keypresses [j])
                 {
-                    cm.keypresses.remove (j);
+                    cm->keypresses.remove (j);
                     sendChangeMessage();
                 }
             }
@@ -207,7 +212,7 @@ void KeyPressMappingSet::invokeCommand (const CommandID commandID,
     info.millisecsSinceKeyPressed = millisecsSinceKeyPressed;
     info.originatingComponent = originatingComponent;
 
-    commandManager.invoke (info, false);
+    commandManager->invoke (info, false);
 }
 
 //==============================================================================
@@ -242,9 +247,8 @@ bool KeyPressMappingSet::restoreFromXml (const XmlElement& xmlVersion)
                 }
                 else if (map->hasTagName ("UNMAPPING"))
                 {
-                    for (int i = mappings.size(); --i >= 0;)
-                        if (mappings.getUnchecked(i)->commandID == commandId)
-                            mappings.getUnchecked(i)->keypresses.removeAllInstancesOf (key);
+                    if (containsMapping (commandId, key))
+                        removeKeyPress (key);
                 }
             }
         }
@@ -271,18 +275,18 @@ XmlElement* KeyPressMappingSet::createXml (const bool saveDifferencesFromDefault
 
     for (int i = 0; i < mappings.size(); ++i)
     {
-        const CommandMapping& cm = *mappings.getUnchecked(i);
+        const CommandMapping* const cm = mappings.getUnchecked(i);
 
-        for (int j = 0; j < cm.keypresses.size(); ++j)
+        for (int j = 0; j < cm->keypresses.size(); ++j)
         {
             if (defaultSet == nullptr
-                 || ! defaultSet->containsMapping (cm.commandID, cm.keypresses.getReference (j)))
+                 || ! defaultSet->containsMapping (cm->commandID, cm->keypresses.getReference (j)))
             {
                 XmlElement* const map = doc->createNewChildElement ("MAPPING");
 
-                map->setAttribute ("commandId", String::toHexString ((int) cm.commandID));
-                map->setAttribute ("description", commandManager.getDescriptionOfCommand (cm.commandID));
-                map->setAttribute ("key", cm.keypresses.getReference (j).getTextDescription());
+                map->setAttribute ("commandId", String::toHexString ((int) cm->commandID));
+                map->setAttribute ("description", commandManager->getDescriptionOfCommand (cm->commandID));
+                map->setAttribute ("key", cm->keypresses.getReference (j).getTextDescription());
             }
         }
     }
@@ -291,17 +295,17 @@ XmlElement* KeyPressMappingSet::createXml (const bool saveDifferencesFromDefault
     {
         for (int i = 0; i < defaultSet->mappings.size(); ++i)
         {
-            const CommandMapping& cm = *defaultSet->mappings.getUnchecked(i);
+            const CommandMapping* const cm = defaultSet->mappings.getUnchecked(i);
 
-            for (int j = 0; j < cm.keypresses.size(); ++j)
+            for (int j = 0; j < cm->keypresses.size(); ++j)
             {
-                if (! containsMapping (cm.commandID, cm.keypresses.getReference (j)))
+                if (! containsMapping (cm->commandID, cm->keypresses.getReference (j)))
                 {
                     XmlElement* const map = doc->createNewChildElement ("UNMAPPING");
 
-                    map->setAttribute ("commandId", String::toHexString ((int) cm.commandID));
-                    map->setAttribute ("description", commandManager.getDescriptionOfCommand (cm.commandID));
-                    map->setAttribute ("key", cm.keypresses.getReference (j).getTextDescription());
+                    map->setAttribute ("commandId", String::toHexString ((int) cm->commandID));
+                    map->setAttribute ("description", commandManager->getDescriptionOfCommand (cm->commandID));
+                    map->setAttribute ("key", cm->keypresses.getReference (j).getTextDescription());
                 }
             }
         }
@@ -311,33 +315,34 @@ XmlElement* KeyPressMappingSet::createXml (const bool saveDifferencesFromDefault
 }
 
 //==============================================================================
-bool KeyPressMappingSet::keyPressed (const KeyPress& key, Component* const originatingComponent)
+bool KeyPressMappingSet::keyPressed (const KeyPress& key,
+                                     Component* originatingComponent)
 {
     bool commandWasDisabled = false;
 
     for (int i = 0; i < mappings.size(); ++i)
     {
-        CommandMapping& cm = *mappings.getUnchecked(i);
+        CommandMapping* const cm =  mappings.getUnchecked(i);
 
-        if (cm.keypresses.contains (key))
+        if (cm->keypresses.contains (key))
         {
-            if (const ApplicationCommandInfo* const ci = commandManager.getCommandForID (cm.commandID))
-            {
-                if ((ci->flags & ApplicationCommandInfo::wantsKeyUpDownCallbacks) == 0)
-                {
-                    ApplicationCommandInfo info (0);
+            const ApplicationCommandInfo* const ci = commandManager->getCommandForID (cm->commandID);
 
-                    if (commandManager.getTargetForCommand (cm.commandID, info) != nullptr)
+            if (ci != nullptr
+                 && (ci->flags & ApplicationCommandInfo::wantsKeyUpDownCallbacks) == 0)
+            {
+                ApplicationCommandInfo info (0);
+
+                if (commandManager->getTargetForCommand (cm->commandID, info) != 0)
+                {
+                    if ((info.flags & ApplicationCommandInfo::isDisabled) == 0)
                     {
-                        if ((info.flags & ApplicationCommandInfo::isDisabled) == 0)
-                        {
-                            invokeCommand (cm.commandID, key, true, 0, originatingComponent);
-                            return true;
-                        }
-                        else
-                        {
-                            commandWasDisabled = true;
-                        }
+                        invokeCommand (cm->commandID, key, true, 0, originatingComponent);
+                        return true;
+                    }
+                    else
+                    {
+                        commandWasDisabled = true;
                     }
                 }
             }
@@ -357,13 +362,13 @@ bool KeyPressMappingSet::keyStateChanged (const bool /*isKeyDown*/, Component* o
 
     for (int i = mappings.size(); --i >= 0;)
     {
-        CommandMapping& cm = *mappings.getUnchecked(i);
+        CommandMapping* const cm =  mappings.getUnchecked(i);
 
-        if (cm.wantsKeyUpDownCallbacks)
+        if (cm->wantsKeyUpDownCallbacks)
         {
-            for (int j = cm.keypresses.size(); --j >= 0;)
+            for (int j = cm->keypresses.size(); --j >= 0;)
             {
-                const KeyPress key (cm.keypresses.getReference (j));
+                const KeyPress key (cm->keypresses.getReference (j));
                 const bool isDown = key.isCurrentlyDown();
 
                 int keyPressEntryIndex = 0;
@@ -402,7 +407,7 @@ bool KeyPressMappingSet::keyStateChanged (const bool /*isKeyDown*/, Component* o
                         keysDown.remove (keyPressEntryIndex);
                     }
 
-                    invokeCommand (cm.commandID, key, isDown, millisecs, originatingComponent);
+                    invokeCommand (cm->commandID, key, isDown, millisecs, originatingComponent);
                     used = true;
                 }
             }

@@ -205,7 +205,7 @@ void LowLevelGraphicsPostScriptRenderer::writeClip()
 
         int itemsOnLine = 0;
 
-        for (const Rectangle<int>* i = stateStack.getLast()->clip.begin(), * const e = stateStack.getLast()->clip.end(); i != e; ++i)
+        for (RectangleList::Iterator i (stateStack.getLast()->clip); i.next();)
         {
             if (++itemsOnLine == 6)
             {
@@ -213,8 +213,10 @@ void LowLevelGraphicsPostScriptRenderer::writeClip()
                 out << '\n';
             }
 
-            out << i->getX() << ' ' << -i->getY() << ' '
-                << i->getWidth() << ' ' << -i->getHeight() << " pr ";
+            const Rectangle<int>& r = *i.getRectangle();
+
+            out << r.getX() << ' ' << -r.getY() << ' '
+                << r.getWidth() << ' ' << -r.getHeight() << " pr ";
         }
 
         out << "endclip\n";
@@ -477,7 +479,7 @@ void LowLevelGraphicsPostScriptRenderer::drawImage (const Image& sourceImage, co
     out << "newpath ";
     int itemsOnLine = 0;
 
-    for (const Rectangle<int>* i = imageClip.begin(), * const e = imageClip.end(); i != e; ++i)
+    for (RectangleList::Iterator i (imageClip); i.next();)
     {
         if (++itemsOnLine == 6)
         {
@@ -485,7 +487,9 @@ void LowLevelGraphicsPostScriptRenderer::drawImage (const Image& sourceImage, co
             itemsOnLine = 0;
         }
 
-        out << i->getX() << ' ' << i->getY() << ' ' << i->getWidth() << ' ' << i->getHeight() << " pr ";
+        const Rectangle<int>& r = *i.getRectangle();
+
+        out << r.getX() << ' ' << r.getY() << ' ' << r.getWidth() << ' ' << r.getHeight() << " pr ";
     }
 
     out << " clip newpath\n";

@@ -37,7 +37,6 @@ class CodeTokeniser;
     files.
 */
 class JUCE_API  CodeEditorComponent   : public Component,
-                                        public ApplicationCommandTarget,
                                         public TextInputTarget
 {
 public:
@@ -143,7 +142,6 @@ public:
     void scrollBy (int deltaLines);
     void scrollToColumn (int newFirstColumnOnScreen);
     void scrollToKeepCaretOnScreen();
-    void scrollToKeepLinesOnScreen (const Range<int>& linesToShow);
 
     void insertTextAtCaret (const String& textToInsert);
     void insertTabAtCaret();
@@ -301,15 +299,6 @@ public:
     */
     virtual void performPopupMenuAction (int menuItemID);
 
-    /** Specifies a commmand-manager which the editor will notify whenever the state
-        of any of its commands changes.
-        If you're making use of the editor's ApplicationCommandTarget interface, then
-        you should also use this to tell it which command manager it should use. Make
-        sure that the manager does not go out of scope while the editor is using it. You
-        can pass a nullptr here to disable this.
-    */
-    void setCommandManager (ApplicationCommandManager* newManager) noexcept;
-
     //==============================================================================
     /** @internal */
     void paint (Graphics&);
@@ -335,14 +324,6 @@ public:
     bool isTextInputActive() const;
     /** @internal */
     void setTemporaryUnderlining (const Array <Range<int> >&);
-    /** @internal */
-    ApplicationCommandTarget* getNextCommandTarget();
-    /** @internal */
-    void getAllCommands (Array<CommandID>&);
-    /** @internal */
-    void getCommandInfo (CommandID, ApplicationCommandInfo&);
-    /** @internal */
-    bool perform (const InvocationInfo&);
 
 private:
     //==============================================================================
@@ -360,7 +341,6 @@ private:
 
     ScopedPointer<CaretComponent> caret;
     ScrollBar verticalScrollBar, horizontalScrollBar;
-    ApplicationCommandManager* appCommandManager;
 
     class Pimpl;
     friend class Pimpl;
@@ -394,13 +374,13 @@ private:
     OwnedArray <CodeDocument::Iterator> cachedIterators;
     void clearCachedIterators (int firstLineToBeInvalid);
     void updateCachedIterators (int maxLineNum);
-    void getIteratorForPosition (int position, CodeDocument::Iterator&);
+    void getIteratorForPosition (int position, CodeDocument::Iterator& result);
 
     void moveLineDelta (int delta, bool selecting);
     int getGutterSize() const noexcept;
 
     //==============================================================================
-    void insertText (const String&);
+    void insertText (const String& textToInsert);
     void updateCaretPosition();
     void updateScrollBars();
     void scrollToLineInternal (int line);
@@ -409,12 +389,11 @@ private:
     void cut();
     void indentSelectedLines (int spacesToAdd);
     bool skipBackwardsToPreviousTab();
-    bool performCommand (int);
 
     int indexToColumn (int line, int index) const noexcept;
     int columnToIndex (int line, int column) const noexcept;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CodeEditorComponent)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (CodeEditorComponent);
 };
 
 

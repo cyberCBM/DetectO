@@ -64,7 +64,6 @@ public:
         LinearHorizontal,               /**< A traditional horizontal slider. */
         LinearVertical,                 /**< A traditional vertical slider. */
         LinearBar,                      /**< A horizontal bar slider with the text label drawn on top of it. */
-        LinearBarVertical,
         Rotary,                         /**< A rotary control that you move by dragging the mouse in a circular motion, like a knob.
                                              @see setRotaryParameters */
         RotaryHorizontalDrag,           /**< A rotary control that you move by dragging the mouse left-to-right.
@@ -89,6 +88,7 @@ public:
     };
 
     /** The position of the slider's text-entry box.
+
         @see setTextBoxStyle
     */
     enum TextEntryBoxPosition
@@ -111,7 +111,8 @@ public:
     */
     explicit Slider (const String& componentName);
 
-    /** Creates a slider with some explicit options. */
+    /** Creates a slider with some explicit options.
+    */
     Slider (SliderStyle style, TextEntryBoxPosition textBoxPosition);
 
     /** Destructor. */
@@ -126,6 +127,7 @@ public:
     void setSliderStyle (SliderStyle newStyle);
 
     /** Returns the slider's current style.
+
         @see setSliderStyle
     */
     SliderStyle getSliderStyle() const noexcept;
@@ -340,14 +342,17 @@ public:
         that are registered, and will synchronously call the valueChanged() method in case subclasses
         want to handle it.
 
-        @param newValue         the new value to set - this will be restricted by the
-                                minimum and maximum range, and will be snapped to the
-                                nearest interval if one has been set
-        @param notification     can be one of the NotificationType values, to request
-                                a synchronous or asynchronous call to the valueChanged() method
-                                of any Slider::Listeners that are registered.
+        @param newValue                 the new value to set - this will be restricted by the
+                                        minimum and maximum range, and will be snapped to the
+                                        nearest interval if one has been set
+        @param sendUpdateMessage        if false, a change to the value will not trigger a call to
+                                        any Slider::Listeners or the valueChanged() method
+        @param sendMessageSynchronously if true, then a call to the Slider::Listeners will be made
+                                        synchronously; if false, it will be asynchronous
     */
-    void setValue (double newValue, NotificationType notification = sendNotificationAsync);
+    void setValue (double newValue,
+                   bool sendUpdateMessage = true,
+                   bool sendMessageSynchronously = false);
 
     /** Returns the slider's current value. */
     double getValue() const;
@@ -412,12 +417,13 @@ public:
         that are registered, and will synchronously call the valueChanged() method in case subclasses
         want to handle it.
 
-        @param newValue         the new value to set - this will be restricted by the
-                                minimum and maximum range, and will be snapped to the nearest
-                                interval if one has been set.
-        @param notification     can be one of the NotificationType values, to request
-                                a synchronous or asynchronous call to the valueChanged() method
-                                of any Slider::Listeners that are registered.
+        @param newValue                 the new value to set - this will be restricted by the
+                                        minimum and maximum range, and will be snapped to the nearest
+                                        interval if one has been set.
+        @param sendUpdateMessage        if false, a change to the value will not trigger a call to
+                                        any Slider::Listeners or the valueChanged() method
+        @param sendMessageSynchronously if true, then a call to the Slider::Listeners will be made
+                                        synchronously; if false, it will be asynchronous
         @param allowNudgingOfOtherValues  if false, this value will be restricted to being below the
                                         max value (in a two-value slider) or the mid value (in a three-value
                                         slider). If true, then if this value goes beyond those values,
@@ -425,7 +431,8 @@ public:
         @see getMinValue, setMaxValue, setValue
     */
     void setMinValue (double newValue,
-                      NotificationType notification = sendNotificationAsync,
+                      bool sendUpdateMessage = true,
+                      bool sendMessageSynchronously = false,
                       bool allowNudgingOfOtherValues = false);
 
     /** For a slider with two or three thumbs, this returns the higher of its values.
@@ -452,12 +459,13 @@ public:
         that are registered, and will synchronously call the valueChanged() method in case subclasses
         want to handle it.
 
-        @param newValue         the new value to set - this will be restricted by the
-                                minimum and maximum range, and will be snapped to the nearest
-                                interval if one has been set.
-        @param notification     can be one of the NotificationType values, to request
-                                a synchronous or asynchronous call to the valueChanged() method
-                                of any Slider::Listeners that are registered.
+        @param newValue                 the new value to set - this will be restricted by the
+                                        minimum and maximum range, and will be snapped to the nearest
+                                        interval if one has been set.
+        @param sendUpdateMessage        if false, a change to the value will not trigger a call to
+                                        any Slider::Listeners or the valueChanged() method
+        @param sendMessageSynchronously if true, then a call to the Slider::Listeners will be made
+                                        synchronously; if false, it will be asynchronous
         @param allowNudgingOfOtherValues  if false, this value will be restricted to being above the
                                         min value (in a two-value slider) or the mid value (in a three-value
                                         slider). If true, then if this value goes beyond those values,
@@ -465,7 +473,8 @@ public:
         @see getMaxValue, setMinValue, setValue
     */
     void setMaxValue (double newValue,
-                      NotificationType notification = sendNotificationAsync,
+                      bool sendUpdateMessage = true,
+                      bool sendMessageSynchronously = false,
                       bool allowNudgingOfOtherValues = false);
 
     /** For a slider with two or three thumbs, this sets the minimum and maximum thumb positions.
@@ -474,17 +483,19 @@ public:
         that are registered, and will synchronously call the valueChanged() method in case subclasses
         want to handle it.
 
-        @param newMinValue      the new minimum value to set - this will be snapped to the
-                                nearest interval if one has been set.
-        @param newMaxValue      the new minimum value to set - this will be snapped to the
-                                nearest interval if one has been set.
-        @param notification     can be one of the NotificationType values, to request
-                                a synchronous or asynchronous call to the valueChanged() method
-                                of any Slider::Listeners that are registered.
+        @param newMinValue              the new minimum value to set - this will be snapped to the
+                                        nearest interval if one has been set.
+        @param newMaxValue              the new minimum value to set - this will be snapped to the
+                                        nearest interval if one has been set.
+        @param sendUpdateMessage        if false, a change to the value will not trigger a call to
+                                        any Slider::Listeners or the valueChanged() method
+        @param sendMessageSynchronously if true, then a call to the Slider::Listeners will be made
+                                        synchronously; if false, it will be asynchronous
         @see setMaxValue, setMinValue, setValue
     */
     void setMinAndMaxValues (double newMinValue, double newMaxValue,
-                             NotificationType notification = sendNotificationAsync);
+                             bool sendUpdateMessage = true,
+                             bool sendMessageSynchronously = false);
 
     //==============================================================================
     /** A class for receiving callbacks from a Slider.
@@ -494,7 +505,7 @@ public:
 
         @see Slider::addListener, Slider::removeListener
     */
-    class Listener
+    class JUCE_API  Listener
     {
     public:
         //==============================================================================
@@ -522,12 +533,13 @@ public:
 
             @see sliderDragEnded, Slider::startedDragging
         */
-        virtual void sliderDragStarted (Slider*) {}
+        virtual void sliderDragStarted (Slider* slider);
 
         /** Called after a drag operation has finished.
+
             @see sliderDragStarted, Slider::stoppedDragging
         */
-        virtual void sliderDragEnded (Slider*) {}
+        virtual void sliderDragEnded (Slider* slider);
     };
 
     /** Adds a listener to be called when this slider's value changes. */
@@ -804,28 +816,14 @@ protected:
 
 private:
     //==============================================================================
-    JUCE_PUBLIC_IN_DLL_BUILD (class Pimpl)
+    class Pimpl;
     friend class Pimpl;
     friend class ScopedPointer<Pimpl>;
     ScopedPointer<Pimpl> pimpl;
 
     void init (SliderStyle, TextEntryBoxPosition);
 
-   #if JUCE_CATCH_DEPRECATED_CODE_MISUSE
-    // These methods' bool parameters have changed: see the new method signature.
-    JUCE_DEPRECATED (void setValue (double, bool));
-    JUCE_DEPRECATED (void setValue (double, bool, bool));
-    JUCE_DEPRECATED (void setMinValue (double, bool, bool, bool));
-    JUCE_DEPRECATED (void setMinValue (double, bool, bool));
-    JUCE_DEPRECATED (void setMinValue (double, bool));
-    JUCE_DEPRECATED (void setMaxValue (double, bool, bool, bool));
-    JUCE_DEPRECATED (void setMaxValue (double, bool, bool));
-    JUCE_DEPRECATED (void setMaxValue (double, bool));
-    JUCE_DEPRECATED (void setMinAndMaxValues (double, double, bool, bool));
-    JUCE_DEPRECATED (void setMinAndMaxValues (double, double, bool));
-   #endif
-
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Slider)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Slider);
 };
 
 /** This typedef is just for compatibility with old code - newer code should use the Slider::Listener class directly. */

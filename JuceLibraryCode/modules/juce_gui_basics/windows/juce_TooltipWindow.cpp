@@ -23,9 +23,10 @@
   ==============================================================================
 */
 
-TooltipWindow::TooltipWindow (Component* const parentComp, const int delayMs)
+TooltipWindow::TooltipWindow (Component* const parent_,
+                              const int millisecondsBeforeTipAppears_)
     : Component ("tooltip"),
-      millisecondsBeforeTipAppears (delayMs),
+      millisecondsBeforeTipAppears (millisecondsBeforeTipAppears_),
       mouseClicks (0),
       mouseWheelMoves (0),
       lastHideTime (0),
@@ -38,8 +39,8 @@ TooltipWindow::TooltipWindow (Component* const parentComp, const int delayMs)
     setAlwaysOnTop (true);
     setOpaque (true);
 
-    if (parentComp != nullptr)
-        parentComp->addChildComponent (this);
+    if (parent_ != nullptr)
+        parent_->addChildComponent (this);
 }
 
 TooltipWindow::~TooltipWindow()
@@ -119,9 +120,10 @@ String TooltipWindow::getTipFor (Component* const c)
          && Process::isForegroundProcess()
          && ! ModifierKeys::getCurrentModifiers().isAnyMouseButtonDown())
     {
-        if (TooltipClient* const ttc = dynamic_cast <TooltipClient*> (c))
-            if (! c->isCurrentlyBlockedByAnotherModalComponent())
-                return ttc->getTooltip();
+        TooltipClient* const ttc = dynamic_cast <TooltipClient*> (c);
+
+        if (ttc != nullptr && ! c->isCurrentlyBlockedByAnotherModalComponent())
+            return ttc->getTooltip();
     }
 
     return String::empty;
@@ -146,7 +148,7 @@ void TooltipWindow::timerCallback()
 
     Desktop& desktop = Desktop::getInstance();
     const int clickCount = desktop.getMouseButtonClickCounter();
-    const int wheelCount = desktop.getMouseWheelMoveCounter();
+    const int wheelCount = desktop.getMouseButtonClickCounter();
     const bool mouseWasClicked = (clickCount > mouseClicks || wheelCount > mouseWheelMoves);
     mouseClicks = clickCount;
     mouseWheelMoves = wheelCount;
@@ -181,7 +183,7 @@ void TooltipWindow::timerCallback()
         // appear after a timeout..
         if (newTip.isNotEmpty()
              && newTip != tipShowing
-             && now > lastCompChangeTime + (unsigned int) millisecondsBeforeTipAppears)
+             && now > lastCompChangeTime + millisecondsBeforeTipAppears)
         {
             showFor (newTip);
         }

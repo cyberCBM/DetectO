@@ -129,9 +129,10 @@ bool InterprocessConnection::isConnected() const
 String InterprocessConnection::getConnectedHostName() const
 {
     if (pipe != nullptr)
+    {
         return "localhost";
-
-    if (socket != nullptr)
+    }
+    else if (socket != nullptr)
     {
         if (! socket->isLocal())
             return socket->getHostName();
@@ -191,7 +192,8 @@ struct ConnectionStateMessage  : public MessageManager::MessageBase
 
     void messageCallback()
     {
-        if (InterprocessConnection* const ipc = owner)
+        InterprocessConnection* const ipc = owner;
+        if (ipc != nullptr)
         {
             if (connectionMade)
                 ipc->connectionMade();
@@ -203,7 +205,7 @@ struct ConnectionStateMessage  : public MessageManager::MessageBase
     WeakReference<InterprocessConnection> owner;
     bool connectionMade;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ConnectionStateMessage)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ConnectionStateMessage);
 };
 
 void InterprocessConnection::connectionMadeInt()
@@ -234,13 +236,14 @@ void InterprocessConnection::connectionLostInt()
 
 struct DataDeliveryMessage  : public Message
 {
-    DataDeliveryMessage (InterprocessConnection* ipc, const MemoryBlock& d)
-        : owner (ipc), data (d)
+    DataDeliveryMessage (InterprocessConnection* owner_, const MemoryBlock& data_)
+        : owner (owner_), data (data_)
     {}
 
     void messageCallback()
     {
-        if (InterprocessConnection* const ipc = owner)
+        InterprocessConnection* const ipc = owner;
+        if (ipc != nullptr)
             ipc->messageReceived (data);
     }
 
@@ -299,7 +302,6 @@ bool InterprocessConnection::readNextMessageInt()
     }
     else if (bytes < 0)
     {
-        if (socket != nullptr)
         {
             const ScopedLock sl (pipeAndSocketLock);
             socket = nullptr;

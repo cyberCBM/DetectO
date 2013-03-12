@@ -39,8 +39,7 @@ public:
         runLoop = CFRunLoopGetCurrent();
        #endif
 
-        CFRunLoopSourceContext sourceContext;
-        zerostruct (sourceContext); // (can't use "= { 0 }" on this object because it's typedef'ed as a C struct)
+        CFRunLoopSourceContext sourceContext = { 0 };
         sourceContext.info = this;
         sourceContext.perform = runLoopSourceCallback;
         runLoopSource = CFRunLoopSourceCreate (kCFAllocatorDefault, 1, &sourceContext);

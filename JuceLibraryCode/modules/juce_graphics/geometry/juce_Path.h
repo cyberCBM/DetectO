@@ -347,15 +347,6 @@ public:
         The rectangle is added as a new sub-path. (Any currently open paths will be left open).
         @see addRectangle, addTriangle
     */
-    void addRoundedRectangle (float x, float y, float width, float height,
-                              float cornerSizeX, float cornerSizeY,
-                              bool curveTopLeft, bool curveTopRight,
-                              bool curveBottomLeft, bool curveBottomRight);
-
-    /** Adds a rectangle with rounded corners to the path.
-        The rectangle is added as a new sub-path. (Any currently open paths will be left open).
-        @see addRectangle, addTriangle
-    */
     template <typename ValueType>
     void addRoundedRectangle (const Rectangle<ValueType>& rectangle, float cornerSizeX, float cornerSizeY)
     {
@@ -689,7 +680,7 @@ public:
         const Path& path;
         size_t index;
 
-        JUCE_DECLARE_NON_COPYABLE (Iterator)
+        JUCE_DECLARE_NON_COPYABLE (Iterator);
     };
 
     //==============================================================================
@@ -762,7 +753,7 @@ private:
     static const float cubicMarker;
     static const float closeSubPathMarker;
 
-    JUCE_LEAK_DETECTOR (Path)
+    JUCE_LEAK_DETECTOR (Path);
 };
 
 #endif   // __JUCE_PATH_JUCEHEADER__

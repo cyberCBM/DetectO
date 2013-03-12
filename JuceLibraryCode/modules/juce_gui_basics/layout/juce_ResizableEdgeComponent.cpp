@@ -94,7 +94,9 @@ void ResizableEdgeComponent::mouseDrag (const MouseEvent& e)
     }
     else
     {
-        if (Component::Positioner* const pos = component->getPositioner())
+        Component::Positioner* const pos = component->getPositioner();
+
+        if (pos != nullptr)
             pos->applyNewBounds (newBounds);
         else
             component->setBounds (newBounds);

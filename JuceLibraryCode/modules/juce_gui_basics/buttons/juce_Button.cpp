@@ -26,13 +26,13 @@
 class Button::RepeatTimer  : public Timer
 {
 public:
-    RepeatTimer (Button& b) : owner (b)   {}
+    RepeatTimer (Button& owner_) : owner (owner_)   {}
     void timerCallback()    { owner.repeatTimerCallback(); }
 
 private:
     Button& owner;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RepeatTimer)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (RepeatTimer);
 };
 
 //==============================================================================
@@ -192,28 +192,26 @@ void Button::setRadioGroupId (const int newGroupId)
 
 void Button::turnOffOtherButtonsInGroup (const bool sendChangeNotification)
 {
-    if (Component* const p = getParentComponent())
+    Component* const p = getParentComponent();
+
+    if (p != nullptr && radioGroupId != 0)
     {
-        if (radioGroupId != 0)
+        WeakReference<Component> deletionWatcher (this);
+
+        for (int i = p->getNumChildComponents(); --i >= 0;)
         {
-            WeakReference<Component> deletionWatcher (this);
+            Component* const c = p->getChildComponent (i);
 
-            for (int i = p->getNumChildComponents(); --i >= 0;)
+            if (c != this)
             {
-                Component* const c = p->getChildComponent (i);
+                Button* const b = dynamic_cast <Button*> (c);
 
-                if (c != this)
+                if (b != nullptr && b->getRadioGroupId() == radioGroupId)
                 {
-                    if (Button* const b = dynamic_cast <Button*> (c))
-                    {
-                        if (b->getRadioGroupId() == radioGroupId)
-                        {
-                            b->setToggleState (false, sendChangeNotification);
+                    b->setToggleState (false, sendChangeNotification);
 
-                            if (deletionWatcher == nullptr)
-                                return;
-                        }
-                    }
+                    if (deletionWatcher == nullptr)
+                        return;
                 }
             }
         }
@@ -295,7 +293,7 @@ void Button::clicked()
 {
 }
 
-void Button::clicked (const ModifierKeys&)
+void Button::clicked (const ModifierKeys& /*modifiers*/)
 {
     clicked();
 }

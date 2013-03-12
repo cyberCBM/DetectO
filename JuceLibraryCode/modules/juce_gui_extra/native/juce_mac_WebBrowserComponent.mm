@@ -234,10 +234,10 @@ private:
 };
 
 //==============================================================================
-WebBrowserComponent::WebBrowserComponent (const bool unloadWhenHidden)
+WebBrowserComponent::WebBrowserComponent (const bool unloadPageWhenBrowserIsHidden_)
     : browser (nullptr),
       blankPageShown (false),
-      unloadPageWhenBrowserIsHidden (unloadWhenHidden)
+      unloadPageWhenBrowserIsHidden (unloadPageWhenBrowserIsHidden_)
 {
     setOpaque (true);
 
@@ -301,8 +301,6 @@ void WebBrowserComponent::checkWindowAssociation()
 {
     if (isShowing())
     {
-        reloadLastURL();
-
         if (blankPageShown)
             goBack();
     }

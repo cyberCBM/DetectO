@@ -343,7 +343,8 @@ void ResizableWindow::setConstrainer (ComponentBoundsConstrainer* newConstrainer
 
         setResizable (shouldBeResizable, useBottomRightCornerResizer);
 
-        if (ComponentPeer* const peer = getPeer())
+        ComponentPeer* const peer = getPeer();
+        if (peer != nullptr)
             peer->setConstrainer (newConstrainer);
     }
 }
@@ -392,7 +393,8 @@ void ResizableWindow::lookAndFeelChanged()
     {
         Component::addToDesktop (getDesktopWindowStyleFlags());
 
-        if (ComponentPeer* const peer = getPeer())
+        ComponentPeer* const peer = getPeer();
+        if (peer != nullptr)
             peer->setConstrainer (constrainer);
     }
 }
@@ -436,7 +438,9 @@ void ResizableWindow::setFullScreen (const bool shouldBeFullScreen)
 
         if (isOnDesktop())
         {
-            if (ComponentPeer* const peer = getPeer())
+            ComponentPeer* const peer = getPeer();
+
+            if (peer != nullptr)
             {
                 // keep a copy of this intact in case the real one gets messed-up while we're un-maximising
                 const Rectangle<int> lastPos (lastNonFullScreenPos);
@@ -474,7 +478,9 @@ void ResizableWindow::setMinimised (const bool shouldMinimise)
 {
     if (shouldMinimise != isMinimised())
     {
-        if (ComponentPeer* const peer = getPeer())
+        ComponentPeer* const peer = getPeer();
+
+        if (peer != nullptr)
         {
             updateLastPos();
             peer->setMinimised (shouldMinimise);

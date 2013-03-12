@@ -158,10 +158,12 @@ public:
 
     static LRESULT CALLBACK hookedWndProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
-        if (Pimpl* const p = getPimpl (hwnd))
-            return p->windowProc  (hwnd, message, wParam, lParam);
+        Pimpl* const p = getPimpl (hwnd);
 
-        return DefWindowProcW (hwnd, message, wParam, lParam);
+        if (p != nullptr)
+            return p->windowProc  (hwnd, message, wParam, lParam);
+        else
+            return DefWindowProcW (hwnd, message, wParam, lParam);
    }
 
     LRESULT windowProc (HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -186,7 +188,7 @@ private:
     const DWORD taskbarCreatedMessage;
     enum { WM_TRAYNOTIFY = WM_USER + 100 };
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Pimpl)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Pimpl);
 };
 
 //==============================================================================

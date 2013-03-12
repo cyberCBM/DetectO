@@ -173,10 +173,10 @@ TextLayout::~TextLayout()
 
 float TextLayout::getHeight() const noexcept
 {
-    if (const Line* const lastLine = lines.getLast())
-        return lastLine->lineOrigin.y + lastLine->descent;
+    const Line* const lastLine = lines.getLast();
 
-    return 0.0f;
+    return lastLine != nullptr ? lastLine->lineOrigin.y + lastLine->descent
+                               : 0;
 }
 
 TextLayout::Line& TextLayout::getLine (const int index) const
@@ -238,7 +238,7 @@ namespace TextLayoutHelpers
 {
     struct FontAndColour
     {
-        FontAndColour (const Font* f) noexcept   : font (f), colour (0xff000000) {}
+        FontAndColour (const Font* font_) noexcept   : font (font_), colour (0xff000000) {}
 
         const Font* font;
         Colour colour;
@@ -251,8 +251,8 @@ namespace TextLayoutHelpers
 
     struct RunAttribute
     {
-        RunAttribute (const FontAndColour& fc, const Range<int>& r) noexcept
-            : fontAndColour (fc), range (r)
+        RunAttribute (const FontAndColour& fontAndColour_, const Range<int>& range_) noexcept
+            : fontAndColour (fontAndColour_), range (range_)
         {}
 
         FontAndColour fontAndColour;
@@ -261,10 +261,10 @@ namespace TextLayoutHelpers
 
     struct Token
     {
-        Token (const String& t, const Font& f, const Colour& c, const bool whitespace)
+        Token (const String& t, const Font& f, const Colour& c, const bool isWhitespace_)
             : text (t), font (f), colour (c),
               area (font.getStringWidthFloat (t), f.getHeight()),
-              isWhitespace (whitespace),
+              isWhitespace (isWhitespace_),
               isNewLine (t.containsChar ('\n') || t.containsChar ('\r'))
         {}
 
@@ -385,7 +385,7 @@ namespace TextLayoutHelpers
 
                 for (int i = 0; i < layout.getNumLines(); ++i)
                 {
-                    float dx = totalW - layout.getLine(i).getLineBoundsX().getLength();
+                    float dx = totalW - getLineWidth (i);
 
                     if (isCentred)
                         dx /= 2.0f;
@@ -499,6 +499,21 @@ namespace TextLayoutHelpers
             }
         }
 
+        float getLineWidth (const int lineNumber) const noexcept
+        {
+            float maxW = 0;
+
+            for (int i = tokens.size(); --i >= 0;)
+            {
+                const Token& t = *tokens.getUnchecked (i);
+
+                if (t.line == lineNumber && ! t.isWhitespace)
+                    maxW = jmax (maxW, t.area.getRight());
+            }
+
+            return maxW;
+        }
+
         void addTextRuns (const AttributedString& text)
         {
             Font defaultFont;
@@ -521,8 +536,8 @@ namespace TextLayoutHelpers
 
                         if (attr.range.contains (i))
                         {
-                            if (const Font* f = attr.getFont())      newFontAndColour.font   = f;
-                            if (const Colour* c = attr.getColour())  newFontAndColour.colour = *c;
+                            if (attr.getFont() != nullptr)    newFontAndColour.font   = attr.getFont();
+                            if (attr.getColour() != nullptr)  newFontAndColour.colour = *attr.getColour();
                         }
                     }
 
@@ -547,7 +562,7 @@ namespace TextLayoutHelpers
         OwnedArray<Token> tokens;
         int totalLines;
 
-        JUCE_DECLARE_NON_COPYABLE (TokenList)
+        JUCE_DECLARE_NON_COPYABLE (TokenList);
     };
 }
 

@@ -34,13 +34,6 @@ namespace jpeglibNamespace
    #if JUCE_MINGW
     typedef unsigned char boolean;
    #endif
-
-   #if JUCE_CLANG
-    #pragma clang diagnostic push
-    #pragma clang diagnostic ignored "-Wconversion"
-   #endif
-
-
     #define JPEG_INTERNALS
     #undef FAR
     #include "jpglib/jpeglib.h"
@@ -113,10 +106,6 @@ namespace jpeglibNamespace
     #include "jpglib/jquant2.c"
     #include "jpglib/jutils.c"
     #include "jpglib/transupp.c"
-
-   #if JUCE_CLANG
-    #pragma clang diagnostic pop
-   #endif
 #else
     #define JPEG_INTERNALS
     #undef FAR
@@ -391,7 +380,7 @@ bool JPEGImageFormat::writeImageToStream (const Image& image, OutputStream& out)
 
     jpeg_start_compress (&jpegCompStruct, TRUE);
 
-    const int strideBytes = (int) (jpegCompStruct.image_width * (unsigned int) jpegCompStruct.input_components);
+    const int strideBytes = (int) (jpegCompStruct.image_width * jpegCompStruct.input_components);
 
     JSAMPARRAY buffer = (*jpegCompStruct.mem->alloc_sarray) ((j_common_ptr) &jpegCompStruct,
                                                              JPOOL_IMAGE, (JDIMENSION) strideBytes, 1);

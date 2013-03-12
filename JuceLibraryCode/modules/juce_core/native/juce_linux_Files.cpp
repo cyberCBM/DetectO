@@ -110,7 +110,7 @@ namespace
 {
     File juce_readlink (const String& file, const File& defaultFile)
     {
-        const size_t size = 8192;
+        const int size = 8192;
         HeapBlock<char> buffer;
         buffer.malloc (size + 4);
 
@@ -129,30 +129,6 @@ File File::getLinkedTarget() const
 }
 
 //==============================================================================
-static File resolveXDGFolder (const char* const type, const char* const fallbackFolder)
-{
-    StringArray confLines;
-    File ("~/.config/user-dirs.dirs").readLines (confLines);
-
-    for (int i = 0; i < confLines.size(); ++i)
-    {
-        const String line (confLines[i].trimStart());
-
-        if (line.startsWith (type))
-        {
-            // eg. resolve XDG_MUSIC_DIR="$HOME/Music" to /home/user/Music
-            const File f (line.replace ("$HOME", File ("~").getFullPathName())
-                              .fromFirstOccurrenceOf ("=", false, false)
-                              .trim().unquoted());
-
-            if (f.isDirectory())
-                return f;
-        }
-    }
-
-    return File (fallbackFolder);
-}
-
 const char* const* juce_argv = nullptr;
 int juce_argc = 0;
 
@@ -160,59 +136,65 @@ File File::getSpecialLocation (const SpecialLocationType type)
 {
     switch (type)
     {
-        case userHomeDirectory:
+    case userHomeDirectory:
+    {
+        const char* homeDir = getenv ("HOME");
+
+        if (homeDir == nullptr)
         {
-            const char* homeDir = getenv ("HOME");
-
-            if (homeDir == nullptr)
-            {
-                struct passwd* const pw = getpwuid (getuid());
-                if (pw != nullptr)
-                    homeDir = pw->pw_dir;
-            }
-
-            return File (CharPointer_UTF8 (homeDir));
+            struct passwd* const pw = getpwuid (getuid());
+            if (pw != nullptr)
+                homeDir = pw->pw_dir;
         }
 
-        case userDocumentsDirectory:          return resolveXDGFolder ("XDG_DOCUMENTS_DIR", "~");
-        case userMusicDirectory:              return resolveXDGFolder ("XDG_MUSIC_DIR",     "~");
-        case userMoviesDirectory:             return resolveXDGFolder ("XDG_VIDEOS_DIR",    "~");
-        case userPicturesDirectory:           return resolveXDGFolder ("XDG_PICTURES_DIR",  "~");
-        case userDesktopDirectory:            return resolveXDGFolder ("XDG_DESKTOP_DIR",   "~/Desktop");
-        case userApplicationDataDirectory:    return File ("~");
-        case commonApplicationDataDirectory:  return File ("/var");
-        case globalApplicationsDirectory:     return File ("/usr");
+        return File (CharPointer_UTF8 (homeDir));
+    }
 
-        case tempDirectory:
+    case userDocumentsDirectory:
+    case userMusicDirectory:
+    case userMoviesDirectory:
+    case userApplicationDataDirectory:
+        return File ("~");
+
+    case userDesktopDirectory:
+        return File ("~/Desktop");
+
+    case commonApplicationDataDirectory:
+        return File ("/var");
+
+    case globalApplicationsDirectory:
+        return File ("/usr");
+
+    case tempDirectory:
+    {
+        File tmp ("/var/tmp");
+
+        if (! tmp.isDirectory())
         {
-            File tmp ("/var/tmp");
+            tmp = "/tmp";
 
             if (! tmp.isDirectory())
-            {
-                tmp = "/tmp";
-
-                if (! tmp.isDirectory())
-                    tmp = File::getCurrentWorkingDirectory();
-            }
-
-            return tmp;
+                tmp = File::getCurrentWorkingDirectory();
         }
 
-        case invokedExecutableFile:
-            if (juce_argv != nullptr && juce_argc > 0)
-                return File (CharPointer_UTF8 (juce_argv[0]));
-            // deliberate fall-through...
+        return tmp;
+    }
 
-        case currentExecutableFile:
-        case currentApplicationFile:
-            return juce_getExecutableFile();
+    case invokedExecutableFile:
+        if (juce_argv != nullptr && juce_argc > 0)
+            return File (CharPointer_UTF8 (juce_argv[0]));
+        // deliberate fall-through...
 
-        case hostApplicationPath:
-            return juce_readlink ("/proc/self/exe", juce_getExecutableFile());
+    case currentExecutableFile:
+    case currentApplicationFile:
+        return juce_getExecutableFile();
 
-        default:
-            jassertfalse; // unknown type?
-            break;
+    case hostApplicationPath:
+        return juce_readlink ("/proc/self/exe", juce_getExecutableFile());
+
+    default:
+        jassertfalse; // unknown type?
+        break;
     }
 
     return File::nonexistent;
@@ -298,7 +280,7 @@ private:
     String parentDir, wildCard;
     DIR* dir;
 
-    JUCE_DECLARE_NON_COPYABLE (Pimpl)
+    JUCE_DECLARE_NON_COPYABLE (Pimpl);
 };
 
 DirectoryIterator::NativeIterator::NativeIterator (const File& directory, const String& wildCard)
@@ -319,15 +301,6 @@ bool DirectoryIterator::NativeIterator::next (String& filenameFound,
 
 
 //==============================================================================
-static bool isFileExecutable (const String& filename)
-{
-    juce_statStruct info;
-
-    return juce_stat (filename, info)
-            && S_ISREG (info.st_mode)
-            && access (filename.toUTF8(), X_OK) == 0;
-}
-
 bool Process::openDocument (const String& fileName, const String& parameters)
 {
     String cmdString (fileName.replace (" ", "\\ ",false));
@@ -335,13 +308,11 @@ bool Process::openDocument (const String& fileName, const String& parameters)
 
     if (URL::isProbablyAWebsiteURL (fileName)
          || cmdString.startsWithIgnoreCase ("file:")
-         || URL::isProbablyAnEmailAddress (fileName)
-         || File::createFileWithoutCheckingPath (fileName).isDirectory()
-         || ! isFileExecutable (fileName))
+         || URL::isProbablyAnEmailAddress (fileName))
     {
         // create a command that tries to launch a bunch of likely browsers
-        const char* const browserNames[] = { "xdg-open", "/etc/alternatives/x-www-browser", "firefox", "mozilla",
-                                             "google-chrome", "chromium-browser", "opera", "konqueror" };
+        const char* const browserNames[] = { "xdg-open", "/etc/alternatives/x-www-browser", "firefox", "mozilla", "konqueror", "opera" };
+
         StringArray cmdLines;
 
         for (int i = 0; i < numElementsInArray (browserNames); ++i)

@@ -23,13 +23,7 @@
   ==============================================================================
 */
 
-#ifndef __JUCE_CPLUSPLUSCODETOKENISERFUNCTIONS_JUCEHEADER__
-#define __JUCE_CPLUSPLUSCODETOKENISERFUNCTIONS_JUCEHEADER__
-
-
-//==============================================================================
-/** Class containing some basic functions for simple tokenising of C++ code.
-*/
+/** Some basic functions for simple tokenising of C++ code. */
 struct CppTokeniserFunctions
 {
     static bool isIdentifierStart (const juce_wchar c) noexcept
@@ -537,9 +531,7 @@ struct CppTokeniserFunctions
         return result;
     }
 
-    /** A class that can be passed to the CppTokeniserFunctions functions in order to
-        parse a String.
-    */
+    /** A class that the tokeniser can use to parse a string. */
     struct StringIterator
     {
         StringIterator (const String& s) noexcept                  : t (s.getCharPointer()), numChars (0) {}
@@ -556,6 +548,3 @@ struct CppTokeniserFunctions
         int numChars;
     };
 };
-
-
-#endif   // __JUCE_CPLUSPLUSCODETOKENISERFUNCTIONS_JUCEHEADER__

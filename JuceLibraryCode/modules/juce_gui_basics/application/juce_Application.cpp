@@ -56,7 +56,9 @@ public:
 
     void actionListenerCallback (const String& message)
     {
-        if (JUCEApplication* const app = JUCEApplication::getInstance())
+        JUCEApplication* const app = JUCEApplication::getInstance();
+
+        if (app != nullptr)
         {
             const String appName (app->getApplicationName());
 
@@ -68,7 +70,7 @@ public:
 private:
     InterProcessLock appLock;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MultipleInstanceHandler)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MultipleInstanceHandler);
 };
 #else
 struct JUCEApplication::MultipleInstanceHandler {};
@@ -117,8 +119,8 @@ void JUCEApplication::sendUnhandledException (const std::exception* const e,
                                               const char* const sourceFile,
                                               const int lineNumber)
 {
-    if (JUCEApplicationBase* const app = JUCEApplicationBase::getInstance())
-        app->unhandledException (e, sourceFile, lineNumber);
+    if (JUCEApplicationBase::getInstance() != nullptr)
+        JUCEApplicationBase::getInstance()->unhandledException (e, sourceFile, lineNumber);
 }
 
 //==============================================================================

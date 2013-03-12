@@ -118,10 +118,13 @@ void ComponentMovementWatcher::componentVisibilityChanged (Component&)
 
 void ComponentMovementWatcher::registerWithParentComps()
 {
-    for (Component* p = component->getParentComponent(); p != nullptr; p = p->getParentComponent())
+    Component* p = component->getParentComponent();
+
+    while (p != nullptr)
     {
         p->addComponentListener (this);
         registeredParentComps.add (p);
+        p = p->getParentComponent();
     }
 }
 

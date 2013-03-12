@@ -13,11 +13,11 @@
 
 
 //==============================================================================
-class tempApplication  : public JUCEApplication
+class JuceGLApplication  : public JUCEApplication
 {
 public:
     //==============================================================================
-    tempApplication() {}
+    JuceGLApplication() {}
 
     const String getApplicationName()       { return ProjectInfo::projectName; }
     const String getApplicationVersion()    { return ProjectInfo::versionString; }
@@ -96,4 +96,4 @@ private:
 
 //==============================================================================
 // This macro generates the main() routine that launches the app.
-START_JUCE_APPLICATION (tempApplication)
+START_JUCE_APPLICATION (JuceGLApplication)

@@ -81,15 +81,16 @@ public:
 
     //==============================================================================
     /** Changes the font to use to draw the text.
+
         @see getFont
     */
     void setFont (const Font& newFont);
 
     /** Returns the font currently being used.
-        This may be the one set by setFont(), unless it has been overridden by the current LookAndFeel
+
         @see setFont
     */
-    Font getFont() const noexcept;
+    const Font& getFont() const noexcept;
 
     //==============================================================================
     /** A set of colour IDs to use to change the colour of various aspects of the label.
@@ -148,7 +149,7 @@ public:
     /** If this label has been attached to another component using attachToComponent, this
         returns the other component.
 
-        Returns nullptr if the label is not attached.
+        Returns 0 if the label is not attached.
     */
     Component* getAttachedComponent() const;
 
@@ -252,9 +253,6 @@ public:
     /** Returns true if the editor is currently focused and active. */
     bool isBeingEdited() const noexcept;
 
-    /** Returns the currently-visible text editor, or nullptr if none is open. */
-    TextEditor* getCurrentTextEditor() const noexcept;
-
 protected:
     //==============================================================================
     /** Creates the TextEditor component that will be used when the user has clicked on the label.
@@ -276,19 +274,19 @@ protected:
 
     //==============================================================================
     /** @internal */
-    void paint (Graphics&);
+    void paint (Graphics& g);
     /** @internal */
     void resized();
     /** @internal */
-    void mouseUp (const MouseEvent&);
+    void mouseUp (const MouseEvent& e);
     /** @internal */
-    void mouseDoubleClick (const MouseEvent&);
+    void mouseDoubleClick (const MouseEvent& e);
     /** @internal */
-    void componentMovedOrResized (Component&, bool wasMoved, bool wasResized);
+    void componentMovedOrResized (Component& component, bool wasMoved, bool wasResized);
     /** @internal */
-    void componentParentHierarchyChanged (Component&);
+    void componentParentHierarchyChanged (Component& component);
     /** @internal */
-    void componentVisibilityChanged (Component&);
+    void componentVisibilityChanged (Component& component);
     /** @internal */
     void inputAttemptWhenModal();
     /** @internal */
@@ -298,13 +296,13 @@ protected:
     /** @internal */
     KeyboardFocusTraverser* createFocusTraverser();
     /** @internal */
-    void textEditorTextChanged (TextEditor&);
+    void textEditorTextChanged (TextEditor& editor);
     /** @internal */
-    void textEditorReturnKeyPressed (TextEditor&);
+    void textEditorReturnKeyPressed (TextEditor& editor);
     /** @internal */
-    void textEditorEscapeKeyPressed (TextEditor&);
+    void textEditorEscapeKeyPressed (TextEditor& editor);
     /** @internal */
-    void textEditorFocusLost (TextEditor&);
+    void textEditorFocusLost (TextEditor& editor);
     /** @internal */
     void colourChanged();
     /** @internal */
@@ -329,7 +327,7 @@ private:
     bool updateFromTextEditorContents (TextEditor&);
     void callChangeListeners();
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Label)
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Label);
 };
 
 /** This typedef is just for compatibility with old code - newer code should use the Label::Listener class directly. */

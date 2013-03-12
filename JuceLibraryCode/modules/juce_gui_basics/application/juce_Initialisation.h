@@ -63,6 +63,8 @@ JUCE_API void JUCE_CALLTYPE  shutdownJuce_GUI();
     This class is particularly handy to use at the beginning of a console app's
     main() function, because it'll take care of shutting down whenever you return
     from the main() call.
+
+    @see ScopedJuceInitialiser_NonGUI
 */
 class ScopedJuceInitialiser_GUI
 {
@@ -90,7 +92,7 @@ public:
 #else
  #if JUCE_WINDOWS
   #if defined (WINAPI) || defined (_WINDOWS_)
-   #define JUCE_MAIN_FUNCTION       int __stdcall WinMain (HINSTANCE, HINSTANCE, const LPSTR, int)
+   #define JUCE_MAIN_FUNCTION       int __stdcall WinMain (HINSTANCE, HINSTANCE, const LPTSTR, int)
   #elif defined (_UNICODE)
    #define JUCE_MAIN_FUNCTION       int __stdcall WinMain (void*, void*, const wchar_t*, int)
   #else
@@ -104,7 +106,7 @@ public:
 
  #define START_JUCE_APPLICATION(AppClass) \
     static juce::JUCEApplicationBase* juce_CreateApplication() { return new AppClass(); } \
-    extern "C" JUCE_MAIN_FUNCTION \
+    JUCE_MAIN_FUNCTION \
     { \
         juce::JUCEApplication::createInstance = &juce_CreateApplication; \
         return juce::JUCEApplication::main (JUCE_MAIN_FUNCTION_ARGS); \
