@@ -13,7 +13,7 @@ Initialized a time ago, but will update real work now...
 Send suggestions that can improve the detection.
 
 
-## License Copyright (C) 2012 by ScPlayer Team
+## License Copyright (C) 2013
 
 Unless otherwise marked, files in DetectO are published under the GNU General Public License v2. A copy of the licence is contained within each source file.
 
