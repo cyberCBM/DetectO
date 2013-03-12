@@ -2,9 +2,9 @@
 
 <JUCERPROJECT id="vEIFph" name="DetectO" projectType="guiapp" version="1.0.0"
               bundleIdentifier="com.CyberCBM.DetectO" jucerVersion="3.0.0"
-              userNotes="This project will be integrating work with openGL and OpenCV to detect the objects from the video or image, and with better UI we will try to come up with something good ideas in future...">
+              userNotes="To detect any objects that are available in video or Image.">
   <MAINGROUP id="ul8AZ9" name="DetectO">
-    <FILE id="bOTNup" name="juce.png" compile="0" resource="1" file="BinaryData/juce.png"/>
+    <FILE id="JRE88V" name="juce.png" compile="0" resource="1" file="BinaryData/juce.png"/>
     <GROUP id="{3802686D-79F7-EED2-A436-4CFC597F0C14}" name="Source">
       <FILE id="ku9YYU" name="MainComponent.cpp" compile="1" resource="0"
             file="Source/MainComponent.cpp"/>
@@ -20,8 +20,13 @@
     <MODULE id="juce_gui_basics" showAllCode="1" useLocalCopy="1"/>
     <MODULE id="juce_gui_extra" showAllCode="1" useLocalCopy="1"/>
     <MODULE id="juce_gui_audio" showAllCode="1" useLocalCopy="1"/>
+    <MODULE id="juce_cryptography" showAllCode="1" useLocalCopy="1"/>
     <MODULE id="juce_video" showAllCode="1" useLocalCopy="1"/>
     <MODULE id="juce_opengl" showAllCode="1" useLocalCopy="1"/>
+    <MODULE id="juce_audio_basics" showAllCode="1" useLocalCopy="1"/>
+    <MODULE id="juce_audio_devices" showAllCode="1" useLocalCopy="1"/>
+    <MODULE id="juce_audio_formats" showAllCode="1" useLocalCopy="1"/>
+    <MODULE id="juce_audio_processors" showAllCode="1" useLocalCopy="1"/>
   </MODULES>
   <EXPORTFORMATS>
     <VS2010 targetFolder="Builds/VisualStudio2010" libraryType="1" juceFolder="..\JUCE\modules">
