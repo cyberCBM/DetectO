@@ -1,41 +1,34 @@
-/*
-==============================================================================
-
-This file was auto-generated!
-
-==============================================================================
+/*                                                                                  
+*=====================================================================================
+*DetectO - Object Detection     													 |
+*Detect Any object in video or Image                                                 |
+*Email: cyber.cbm@gmail.com                                                          |
+*Github: https://github.com/cyberCBM/DetectO.git                                     |
+*License: GNU2 License, Copyright (c) 2012 by ScTeam                                 |
+* ScPlayer can be redistributed and/or modified under the terms of the GNU General   |
+* Public License (Version 2).                                                        |
+*It use JUCE and OpenCV Libraries which holds GNU2                                   |
+*A copy of the license is included in the DetectO distribution, or can be found     |
+* online at www.gnu.org/licenses.                                                    |
+*=====================================================================================
 */
 
 #include "MainComponent.h"
 
 
 //==============================================================================
-MainContentComponent::MainContentComponent() : rotation (0.0f),
-	textScrollPos (200)
+MainContentComponent::MainContentComponent() : rotation (0.0f), frame(0), cascade(0), storage(0), capture(0),
+    textScrollPos (200), key(0), filename("../../BinaryData/haarcascade_frontalface_alt.xml")
 {
-	infoLabel.setText ("These sliders demonstrate how components and 2D graphics can be rendered "
-		"using OpenGL by using the OpenGLContext class.", false);
-	infoLabel.setInterceptsMouseClicks (false, false);
-	addAndMakeVisible (&infoLabel);
-	infoLabel.setBounds ("parent.width * 0.05, bottom - 150, parent.width * 0.4, parent.height - 60");
+	/* load the classifier
+       note that I put the file in the same directory with
+       this code */
+    cascade = ( CvHaarClassifierCascade* )cvLoad( filename, 0, 0, 0 );
+ 
+    /* setup memory buffer; needed by the face detector */
+    storage = cvCreateMemStorage( 0 );
 
-	speedSlider.setRange (-10.0, 10.0, 0.1);
-	speedSlider.setPopupMenuEnabled (true);
-	speedSlider.setValue (Random::getSystemRandom().nextDouble() * 3.0, dontSendNotification);
-	speedSlider.setSliderStyle (Slider::LinearHorizontal);
-	speedSlider.setTextBoxStyle (Slider::TextBoxLeft, false, 80, 20);
-	addAndMakeVisible (&speedSlider);
-	speedSlider.setBounds ("parent.width * 0.05, parent.height - 65, parent.width * 0.6, top + 24");
-
-	sizeSlider.setRange (0.2, 2.0, 0.01);
-	sizeSlider.setPopupMenuEnabled (true);
-	sizeSlider.setValue (Random::getSystemRandom().nextDouble() + 0.5, dontSendNotification);
-	sizeSlider.setSliderStyle (Slider::LinearHorizontal);
-	sizeSlider.setTextBoxStyle (Slider::TextBoxLeft, false, 80, 20);
-	addAndMakeVisible (&sizeSlider);
-	sizeSlider.setBounds ("parent.width * 0.05, parent.height - 35, parent.width * 0.6, top + 24");
-
-	openGLContext.setRenderer (this);
+    openGLContext.setRenderer (this);
 	openGLContext.setComponentPaintingEnabled (true);
 	openGLContext.attachTo (*this);
 	setSize (500, 400);
@@ -43,6 +36,11 @@ MainContentComponent::MainContentComponent() : rotation (0.0f),
 
 MainContentComponent::~MainContentComponent()
 {
+    openGLContext.detach();
+    /* free memory */
+    cvReleaseCapture( &capture );
+    cvReleaseHaarClassifierCascade( &cascade );
+    cvReleaseMemStorage( &storage );
 }
 
 // when the component creates a new internal context, this is called, and
@@ -157,7 +155,7 @@ void MainContentComponent::drawBackground2DStuff()
 		Path p;
 		const float scale = getHeight() * 0.4f;
 		p.addStar (Point<float> (getWidth() * 0.7f, getHeight() * 0.4f), 7,
-			scale * (float) sizeSlider.getValue(), scale,
+			scale * 0.6f, scale,
 			rotation / 50.0f);
 
 		g.setGradientFill (ColourGradient (Colours::green.withRotatedHue (fabsf (::sinf (rotation / 300.0f))),

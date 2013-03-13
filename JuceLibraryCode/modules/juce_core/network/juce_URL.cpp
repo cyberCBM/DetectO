@@ -160,8 +160,7 @@ namespace URLHelpers
 
             data << "--" << boundary;
 
-            int i;
-            for (i = 0; i < url.getParameterNames().size(); ++i)
+            for (int i = 0; i < url.getParameterNames().size(); ++i)
             {
                 data << "\r\nContent-Disposition: form-data; name=\""
                      << url.getParameterNames() [i]
@@ -171,7 +170,7 @@ namespace URLHelpers
                      << boundary;
             }
 
-            for (i = 0; i < url.getFilesToUpload().size(); ++i)
+            for (int i = 0; i < url.getFilesToUpload().size(); ++i)
             {
                 const File file (url.getFilesToUpload().getAllValues() [i]);
                 const String paramName (url.getFilesToUpload().getAllKeys() [i]);
@@ -224,8 +223,8 @@ String URL::toString (const bool includeGetParameters) const
 {
     if (includeGetParameters && parameterNames.size() > 0)
         return url + "?" + URLHelpers::getMangledParameters (*this);
-    else
-        return url;
+
+    return url;
 }
 
 bool URL::isWellFormed() const

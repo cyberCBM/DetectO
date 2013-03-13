@@ -36,10 +36,10 @@ extern jobject createOpenGLView (ComponentPeer*);
 class OpenGLContext::NativeContext
 {
 public:
-    NativeContext (Component& component_,
+    NativeContext (Component& comp,
                    const OpenGLPixelFormat& pixelFormat,
                    void* /*contextToShareWith*/)
-        : component (component_),
+        : component (comp),
           isInsideGLCallback (false)
     {
         {
@@ -143,7 +143,7 @@ private:
     static CriticalSection contextListLock;
     static ContextArray contextList;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (NativeContext);
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (NativeContext)
 };
 
 CriticalSection OpenGLContext::NativeContext::contextListLock;
@@ -162,25 +162,20 @@ JUCE_JNI_CALLBACK (GL_VIEW_CLASS_NAME, contextCreated, void, (JNIEnv* env, jobje
 {
     threadLocalJNIEnvHolder.getOrAttach();
 
-    OpenGLContext::NativeContext* const context = OpenGLContext::NativeContext::findContextFor (env, view);
-    jassert (context != nullptr);
-
-    if (context != nullptr)
+    if (OpenGLContext::NativeContext* const context = OpenGLContext::NativeContext::findContextFor (env, view))
         context->contextCreatedCallback();
+    else
+        jassertfalse;
 }
 
 JUCE_JNI_CALLBACK (GL_VIEW_CLASS_NAME, contextChangedSize, void, (JNIEnv* env, jobject view))
 {
-    OpenGLContext::NativeContext* const context = OpenGLContext::NativeContext::findContextFor (env, view);
-
-    if (context != nullptr)
+    if (OpenGLContext::NativeContext* const context = OpenGLContext::NativeContext::findContextFor (env, view))
         context->contextChangedSize();
 }
 
 JUCE_JNI_CALLBACK (GL_VIEW_CLASS_NAME, render, void, (JNIEnv* env, jobject view))
 {
-    OpenGLContext::NativeContext* const context = OpenGLContext::NativeContext::findContextFor (env, view);
-
-    if (context != nullptr)
+    if (OpenGLContext::NativeContext* const context = OpenGLContext::NativeContext::findContextFor (env, view))
         context->renderCallback();
 }

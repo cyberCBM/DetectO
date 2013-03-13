@@ -41,11 +41,9 @@ public:
 
         isDragging = false;
         needSelectionOnMouseUp = false;
-
         Rectangle<int> pos;
-        TreeViewItem* const item = findItemAt (e.y, pos);
 
-        if (item != nullptr)
+        if (TreeViewItem* const item = findItemAt (e.y, pos))
         {
             // (if the open/close buttons are hidden, we'll treat clicks to the left of the item
             // as selection clicks)
@@ -79,9 +77,7 @@ public:
         if (needSelectionOnMouseUp && e.mouseWasClicked())
         {
             Rectangle<int> pos;
-            TreeViewItem* const item = findItemAt (e.y, pos);
-
-            if (item != nullptr)
+            if (TreeViewItem* const item = findItemAt (e.y, pos))
                 selectBasedOnModifiers (item, e.mods);
         }
     }
@@ -91,10 +87,9 @@ public:
         if (e.getNumberOfClicks() != 3)  // ignore triple clicks
         {
             Rectangle<int> pos;
-            TreeViewItem* const item = findItemAt (e.y, pos);
-
-            if (item != nullptr && (e.x >= pos.getX() || ! owner.openCloseButtonsVisible))
-                item->itemDoubleClicked (e.withNewPosition (e.getPosition() - pos.getPosition()));
+            if (TreeViewItem* const item = findItemAt (e.y, pos))
+                if (e.x >= pos.getX() || ! owner.openCloseButtonsVisible)
+                    item->itemDoubleClicked (e.withNewPosition (e.getPosition() - pos.getPosition()));
         }
     }
 
@@ -116,10 +111,7 @@ public:
 
                 if (! (dragDescription.isVoid() || (dragDescription.isString() && dragDescription.toString().isEmpty())))
                 {
-                    DragAndDropContainer* const dragContainer
-                        = DragAndDropContainer::findParentDragContainerFor (this);
-
-                    if (dragContainer != nullptr)
+                    if (DragAndDropContainer* const dragContainer = DragAndDropContainer::findParentDragContainerFor (this))
                     {
                         pos.setSize (pos.getWidth(), item->itemHeight);
                         Image dragImage (Component::createComponentSnapshot (pos, true));
@@ -191,21 +183,14 @@ public:
 
                 if (y >= visibleTop)
                 {
-                    RowItem* const ri = findItem (item->uid);
-
-                    if (ri != nullptr)
+                    if (RowItem* const ri = findItem (item->uid))
                     {
                         ri->shouldKeep = true;
                     }
-                    else
+                    else if (Component* const comp = item->createItemComponent())
                     {
-                        Component* const comp = item->createItemComponent();
-
-                        if (comp != nullptr)
-                        {
-                            items.add (new RowItem (item, comp, item->uid));
-                            addAndMakeVisible (comp);
-                        }
+                        items.add (new RowItem (item, comp, item->uid));
+                        addAndMakeVisible (comp);
                     }
                 }
 
@@ -257,9 +242,7 @@ public:
     String getTooltip()
     {
         Rectangle<int> pos;
-        TreeViewItem* const item = findItemAt (getMouseXYRelative().getY(), pos);
-
-        if (item != nullptr)
+        if (TreeViewItem* const item = findItemAt (getMouseXYRelative().y, pos))
             return item->getTooltip();
 
         return owner.getTooltip();
@@ -380,17 +363,16 @@ private:
 
     static bool isMouseDraggingInChildCompOf (Component* const comp)
     {
-        for (int i = Desktop::getInstance().getNumMouseSources(); --i >= 0;)
+        Desktop& desktop = Desktop::getInstance();
+
+        for (int i = desktop.getNumMouseSources(); --i >= 0;)
         {
-            MouseInputSource* const source = Desktop::getInstance().getMouseSource(i);
+            MouseInputSource* const source = desktop.getMouseSource(i);
 
             if (source->isDragging())
-            {
-                Component* const underMouse = source->getComponentUnderMouse();
-
-                if (underMouse != nullptr && (comp == underMouse || comp->isParentOf (underMouse)))
-                    return true;
-            }
+                if (Component* const underMouse = source->getComponentUnderMouse())
+                    if (comp == underMouse || comp->isParentOf (underMouse))
+                        return true;
         }
 
         return false;
@@ -401,7 +383,7 @@ private:
         owner.recalculateIfNeeded();
     }
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ContentComponent);
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ContentComponent)
 };
 
 //==============================================================================
@@ -412,9 +394,7 @@ public:
 
     void updateComponents (const bool triggerResize)
     {
-        ContentComponent* const tvc = getContentComp();
-
-        if (tvc != nullptr)
+        if (ContentComponent* const tvc = getContentComp())
         {
             if (triggerResize)
                 tvc->resized();
@@ -448,7 +428,7 @@ public:
 private:
     int lastX;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TreeViewport);
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TreeViewport)
 };
 
 
@@ -664,9 +644,7 @@ void TreeView::restoreOpennessState (const XmlElement& newState, const bool rest
 
             forEachXmlChildElementWithTagName (newState, e, "SELECTED")
             {
-                TreeViewItem* const item = rootItem->findItemFromIdentifierString (e->getStringAttribute ("id"));
-
-                if (item != nullptr)
+                if (TreeViewItem* const item = rootItem->findItemFromIdentifierString (e->getStringAttribute ("id")))
                     item->setSelected (true, false);
             }
         }
@@ -700,17 +678,14 @@ void TreeView::moveSelectedRow (const int delta)
     {
         int rowSelected = 0;
 
-        TreeViewItem* const firstSelected = getSelectedItem (0);
-        if (firstSelected != nullptr)
+        if (TreeViewItem* const firstSelected = getSelectedItem (0))
             rowSelected = firstSelected->getRowNumberInTree();
 
         rowSelected = jlimit (0, numRowsInTree - 1, rowSelected + delta);
 
         for (;;)
         {
-            TreeViewItem* const item = getItemOnRow (rowSelected);
-
-            if (item != nullptr)
+            if (TreeViewItem* const item = getItemOnRow (rowSelected))
             {
                 if (! item->canBeSelected())
                 {
@@ -761,16 +736,13 @@ void TreeView::scrollToKeepItemVisible (TreeViewItem* item)
 
 void TreeView::toggleOpenSelectedItem()
 {
-    TreeViewItem* const firstSelected = getSelectedItem (0);
-    if (firstSelected != nullptr)
+    if (TreeViewItem* const firstSelected = getSelectedItem (0))
         firstSelected->setOpen (! firstSelected->isOpen());
 }
 
 void TreeView::moveOutOfSelectedItem()
 {
-    TreeViewItem* const firstSelected = getSelectedItem (0);
-
-    if (firstSelected != nullptr)
+    if (TreeViewItem* const firstSelected = getSelectedItem (0))
     {
         if (firstSelected->isOpen())
         {
@@ -794,9 +766,7 @@ void TreeView::moveOutOfSelectedItem()
 
 void TreeView::moveIntoSelectedItem()
 {
-    TreeViewItem* const firstSelected = getSelectedItem (0);
-
-    if (firstSelected != nullptr)
+    if (TreeViewItem* const firstSelected = getSelectedItem (0))
     {
         if (firstSelected->isOpen() || ! firstSelected->mightContainSubItems())
             moveSelectedRow (1);
@@ -807,9 +777,7 @@ void TreeView::moveIntoSelectedItem()
 
 void TreeView::moveByPages (int numPages)
 {
-    TreeViewItem* currentItem = getSelectedItem (0);
-
-    if (currentItem != nullptr)
+    if (TreeViewItem* currentItem = getSelectedItem (0))
     {
         const Rectangle<int> pos (currentItem->getItemPosition (false));
         const int targetY = pos.getY() + numPages * (getHeight() - pos.getHeight());
@@ -985,7 +953,7 @@ public:
     int lastIndex;
 
 private:
-    JUCE_DECLARE_NON_COPYABLE (InsertPointHighlight);
+    JUCE_DECLARE_NON_COPYABLE (InsertPointHighlight)
 };
 
 //==============================================================================
@@ -1012,7 +980,7 @@ public:
     }
 
 private:
-    JUCE_DECLARE_NON_COPYABLE (TargetGroupHighlight);
+    JUCE_DECLARE_NON_COPYABLE (TargetGroupHighlight)
 };
 
 //==============================================================================
@@ -1254,8 +1222,8 @@ bool TreeViewItem::isOpen() const noexcept
 {
     if (openness == opennessDefault)
         return ownerView != nullptr && ownerView->defaultOpenness;
-    else
-        return openness == opennessOpen;
+
+    return openness == opennessOpen;
 }
 
 void TreeViewItem::setOpen (const bool shouldBeOpen)
@@ -1305,7 +1273,8 @@ void TreeViewItem::deselectAllRecursively()
 }
 
 void TreeViewItem::setSelected (const bool shouldBeSelected,
-                                const bool deselectOtherItemsFirst)
+                                const bool deselectOtherItemsFirst,
+                                const NotificationType notify)
 {
     if (shouldBeSelected && ! canBeSelected())
         return;
@@ -1319,7 +1288,8 @@ void TreeViewItem::setSelected (const bool shouldBeSelected,
         if (ownerView != nullptr)
             ownerView->repaint();
 
-        itemSelectionChanged (shouldBeSelected);
+        if (notify != dontSendNotification)
+            itemSelectionChanged (shouldBeSelected);
     }
 }
 
@@ -1475,21 +1445,15 @@ void TreeViewItem::setOwnerView (TreeView* const newOwner) noexcept
 
 int TreeViewItem::getIndentX() const noexcept
 {
-    const int indentWidth = ownerView->getIndentSize();
-    int x = ownerView->rootItemVisible ? indentWidth : 0;
+    int x = ownerView->rootItemVisible ? 1 : 0;
 
     if (! ownerView->openCloseButtonsVisible)
-        x -= indentWidth;
+        --x;
 
-    TreeViewItem* p = parentItem;
+    for (TreeViewItem* p = parentItem; p != nullptr; p = p->parentItem)
+        ++x;
 
-    while (p != nullptr)
-    {
-        x += indentWidth;
-        p = p->parentItem;
-    }
-
-    return x;
+    return x * ownerView->getIndentSize();
 }
 
 void TreeViewItem::setDrawsInLeftMargin (bool canDrawInLeftMargin) noexcept
@@ -1712,9 +1676,7 @@ TreeViewItem* TreeViewItem::getSelectedItemWithIndex (int index) noexcept
         {
             TreeViewItem* const item = subItems.getUnchecked(i);
 
-            TreeViewItem* const found = item->getSelectedItemWithIndex (index);
-
-            if (found != nullptr)
+            if (TreeViewItem* const found = item->getSelectedItemWithIndex (index))
                 return found;
 
             index -= item->countSelectedItemsRecursively (-1);
@@ -1796,12 +1758,8 @@ TreeViewItem* TreeViewItem::findItemFromIdentifierString (const String& identifi
         setOpen (true);
 
         for (int i = subItems.size(); --i >= 0;)
-        {
-            TreeViewItem* item = subItems.getUnchecked(i)->findItemFromIdentifierString (remainingPath);
-
-            if (item != nullptr)
+            if (TreeViewItem* item = subItems.getUnchecked(i)->findItemFromIdentifierString (remainingPath))
                 return item;
-        }
 
         setOpen (wasOpen);
     }

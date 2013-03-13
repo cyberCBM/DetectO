@@ -393,7 +393,7 @@ public:
     */
     bool containsIgnoreCase (const String& text) const noexcept;
 
-    /** Tests whether the string contains another substring as a distict word.
+    /** Tests whether the string contains another substring as a distinct word.
 
         @returns    true if the string contains this word, surrounded by
                     non-alphanumeric characters
@@ -401,7 +401,7 @@ public:
     */
     bool containsWholeWord (const String& wordToLookFor) const noexcept;
 
-    /** Tests whether the string contains another substring as a distict word.
+    /** Tests whether the string contains another substring as a distinct word.
 
         @returns    true if the string contains this word, surrounded by
                     non-alphanumeric characters
@@ -409,7 +409,7 @@ public:
     */
     bool containsWholeWordIgnoreCase (const String& wordToLookFor) const noexcept;
 
-    /** Finds an instance of another substring if it exists as a distict word.
+    /** Finds an instance of another substring if it exists as a distinct word.
 
         @returns    if the string contains this word, surrounded by non-alphanumeric characters,
                     then this will return the index of the start of the substring. If it isn't
@@ -418,7 +418,7 @@ public:
     */
     int indexOfWholeWord (const String& wordToLookFor) const noexcept;
 
-    /** Finds an instance of another substring if it exists as a distict word.
+    /** Finds an instance of another substring if it exists as a distinct word.
 
         @returns    if the string contains this word, surrounded by non-alphanumeric characters,
                     then this will return the index of the start of the substring. If it isn't
@@ -579,7 +579,7 @@ public:
         then to use that to iterate the string.
         @see getCharPointer
     */
-    const juce_wchar operator[] (int index) const noexcept;
+    juce_wchar operator[] (int index) const noexcept;
 
     /** Returns the final character of the string.
         If the string is empty this will return 0.
@@ -647,7 +647,7 @@ public:
     */
     String fromFirstOccurrenceOf (const String& substringToStartFrom,
                                   bool includeSubStringInResult,
-                                        bool ignoreCase) const;
+                                  bool ignoreCase) const;
 
     /** Returns a section of the string starting from the last occurrence of a given substring.
 

@@ -87,9 +87,7 @@ public:
             for (int i = propertyComps.size(); --i >= 0;)
                 propertyComps.getUnchecked(i)->setVisible (open);
 
-            PropertyPanel* const pp = findParentComponentOfClass<PropertyPanel>();
-
-            if (pp != nullptr)
+            if (PropertyPanel* const pp = findParentComponentOfClass<PropertyPanel>())
                 pp->resized();
         }
     }
@@ -127,7 +125,7 @@ private:
     int titleHeight;
     bool sectionIsOpen;
 
-    JUCE_DECLARE_NON_COPYABLE (SectionComponent);
+    JUCE_DECLARE_NON_COPYABLE (SectionComponent)
 };
 
 //==============================================================================
@@ -177,7 +175,7 @@ public:
 private:
     OwnedArray<SectionComponent> sections;
 
-    JUCE_DECLARE_NON_COPYABLE (PropertyHolderComponent);
+    JUCE_DECLARE_NON_COPYABLE (PropertyHolderComponent)
 };
 
 

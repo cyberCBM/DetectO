@@ -776,11 +776,8 @@ public:
     TargetClass* findParentComponentOfClass() const
     {
         for (Component* p = parentComponent; p != nullptr; p = p->parentComponent)
-        {
-            TargetClass* const target = dynamic_cast <TargetClass*> (p);
-            if (target != nullptr)
+            if (TargetClass* const target = dynamic_cast <TargetClass*> (p))
                 return target;
-        }
 
         return nullptr;
     }
@@ -1550,7 +1547,10 @@ public:
 
         If not overridden, a component will forward this message to its parent, so
         that parent components can collect mouse-wheel messages that happen to
-        child components which aren't interested in them.
+        child components which aren't interested in them. (Bear in mind that if
+        you attach a component as a mouse-listener to other components, then
+        those wheel moves will also end up calling this method and being passed up
+        to the parents, which may not be what you intended to happen).
 
         @param event   details about the mouse event
         @param wheel   details about the mouse wheel movement
@@ -1918,7 +1918,7 @@ public:
 
     /** Ends a component's modal state.
 
-        If this component is currently modal, this will turn of its modalness, and return
+        If this component is currently modal, this will turn off its modalness, and return
         a value to the runModalLoop() method that might have be running its modal loop.
 
         @see runModalLoop, enterModalState, isCurrentlyModal
@@ -2053,8 +2053,8 @@ public:
 
     //==============================================================================
     /** Components can implement this method to provide a MarkerList.
-        The default implementation of this method returns 0, but you can override it to
-        return a pointer to the component's marker list. If xAxis is true, it should
+        The default implementation of this method returns nullptr, but you can override
+        it to return a pointer to the component's marker list. If xAxis is true, it should
         return the X marker list; if false, it should return the Y markers.
     */
     virtual MarkerList* getMarkers (bool xAxis);
@@ -2139,7 +2139,7 @@ public:
     private:
         const WeakReference<Component> safePointer;
 
-        JUCE_DECLARE_NON_COPYABLE (BailOutChecker);
+        JUCE_DECLARE_NON_COPYABLE (BailOutChecker)
     };
 
     //==============================================================================
@@ -2172,7 +2172,7 @@ public:
     private:
         Component& component;
 
-        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Positioner);
+        JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Positioner)
     };
 
     /** Returns the Positioner object that has been set for this component.
@@ -2258,6 +2258,7 @@ private:
         bool isDisabledFlag             : 1;
         bool childCompFocusedFlag       : 1;
         bool dontClipGraphicsFlag       : 1;
+        bool mouseDownWasBlocked        : 1;
       #if JUCE_DEBUG
         bool isInsidePaintCall          : 1;
       #endif
@@ -2309,7 +2310,7 @@ private:
     /* Components aren't allowed to have copy constructors, as this would mess up parent hierarchies.
        You might need to give your subclasses a private dummy constructor to avoid compiler warnings.
     */
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Component);
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (Component)
 
     //==============================================================================
    #if JUCE_CATCH_DEPRECATED_CODE_MISUSE

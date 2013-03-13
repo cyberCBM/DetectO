@@ -42,27 +42,14 @@ AlertWindow::AlertWindow (const String& title,
      associatedComponent (comp),
      escapeKeyCancels (true)
 {
+    setAlwaysOnTop (juce_areThereAnyAlwaysOnTopWindows());
+
     if (message.isEmpty())
         text = " "; // to force an update if the message is empty
 
     setMessage (message);
 
-    for (int i = Desktop::getInstance().getNumComponents(); --i >= 0;)
-    {
-        Component* const c = Desktop::getInstance().getComponent (i);
-
-        if (c != nullptr && c->isAlwaysOnTop() && c->isShowing())
-        {
-            setAlwaysOnTop (true);
-            break;
-        }
-    }
-
-    if (! JUCEApplication::isStandaloneApp())
-        setAlwaysOnTop (true); // for a plugin, make it always-on-top because the host windows are often top-level
-
     AlertWindow::lookAndFeelChanged();
-
     constrainer.setMinimumOnscreenAmounts (0x10000, 0x10000, 0x10000, 0x10000);
 }
 
@@ -248,7 +235,7 @@ public:
 private:
     int bestWidth;
 
-    JUCE_DECLARE_NON_COPYABLE (AlertTextComp);
+    JUCE_DECLARE_NON_COPYABLE (AlertTextComp)
 };
 
 void AlertWindow::addTextBlock (const String& textBlock)

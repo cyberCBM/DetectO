@@ -1,15 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<JUCERPROJECT id="vEIFph" name="DetectO" projectType="guiapp" version="1.0.0"
-              bundleIdentifier="com.CyberCBM.DetectO" jucerVersion="3.0.0"
-              userNotes="To detect any objects that are available in video or Image.">
-  <MAINGROUP id="ul8AZ9" name="DetectO">
-    <FILE id="JRE88V" name="juce.png" compile="0" resource="1" file="BinaryData/juce.png"/>
-    <GROUP id="{3802686D-79F7-EED2-A436-4CFC597F0C14}" name="Source">
-      <FILE id="ku9YYU" name="MainComponent.cpp" compile="1" resource="0"
+<JUCERPROJECT id="BAOpGf" name="DetectO" projectType="guiapp" version="1.0.0"
+              bundleIdentifier="com.yourcompany.DetectO" jucerVersion="3.0.0">
+  <MAINGROUP id="AlIyuJ" name="DetectO">
+    <GROUP id="{980FD6D3-D002-B63B-DF55-235A45E3B499}" name="Resources">
+      <FILE id="sr23Pt" name="juce.png" compile="0" resource="1" file="BinaryData/juce.png"/>
+    </GROUP>
+    <GROUP id="{E08EDF9A-5068-61E4-2AF7-10F168B6E558}" name="Source">
+      <FILE id="svWvl2" name="MainComponent.cpp" compile="1" resource="0"
             file="Source/MainComponent.cpp"/>
-      <FILE id="XcPitq" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
-      <FILE id="co6dhp" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
+      <FILE id="rJlQjh" name="MainComponent.h" compile="0" resource="0" file="Source/MainComponent.h"/>
+      <FILE id="BRiypR" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
     </GROUP>
   </MAINGROUP>
   <MODULES>
@@ -23,18 +24,14 @@
     <MODULE id="juce_cryptography" showAllCode="1" useLocalCopy="1"/>
     <MODULE id="juce_video" showAllCode="1" useLocalCopy="1"/>
     <MODULE id="juce_opengl" showAllCode="1" useLocalCopy="1"/>
-    <MODULE id="juce_audio_basics" showAllCode="1" useLocalCopy="1"/>
-    <MODULE id="juce_audio_devices" showAllCode="1" useLocalCopy="1"/>
-    <MODULE id="juce_audio_formats" showAllCode="1" useLocalCopy="1"/>
-    <MODULE id="juce_audio_processors" showAllCode="1" useLocalCopy="1"/>
   </MODULES>
   <EXPORTFORMATS>
-    <VS2010 targetFolder="Builds/VisualStudio2010" libraryType="1" juceFolder="..\JUCE\modules">
+    <VS2010 targetFolder="Builds/VisualStudio2010" libraryType="1" juceFolder="..\..\..\WorkOuts\JUCE\modules">
       <CONFIGURATIONS>
         <CONFIGURATION name="Debug" winWarningLevel="4" generateManifest="1" winArchitecture="32-bit"
-                       isDebug="1" optimisation="1" targetName="JuceGL"/>
+                       isDebug="1" optimisation="1" targetName="DetectO"/>
         <CONFIGURATION name="Release" winWarningLevel="4" generateManifest="1" winArchitecture="32-bit"
-                       isDebug="0" optimisation="2" targetName="JuceGL"/>
+                       isDebug="0" optimisation="2" targetName="DetectO"/>
       </CONFIGURATIONS>
     </VS2010>
   </EXPORTFORMATS>

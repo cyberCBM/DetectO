@@ -43,7 +43,7 @@
     @see SelectableObject
 */
 template <class SelectableItemType>
-class JUCE_API  SelectedItemSet   : public ChangeBroadcaster
+class SelectedItemSet   : public ChangeBroadcaster
 {
 public:
     //==============================================================================
@@ -301,7 +301,7 @@ private:
     //==============================================================================
     Array <SelectableItemType> selectedItems;
 
-    JUCE_LEAK_DETECTOR (SelectedItemSet <SelectableItemType>);
+    JUCE_LEAK_DETECTOR (SelectedItemSet <SelectableItemType>)
 };
 
 

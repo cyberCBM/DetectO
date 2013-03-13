@@ -1,13 +1,24 @@
-/*
-  ==============================================================================
-
-    This file was auto-generated!
-
-  ==============================================================================
+/*                                                                                  
+*=====================================================================================
+*DetectO - Object Detection     													 |
+*Detect Any object in video or Image                                                 |
+*Email: cyber.cbm@gmail.com                                                          |
+*Github: https://github.com/cyberCBM/DetectO.git                                     |
+*License: GNU2 License, Copyright (c) 2012 by ScTeam                                 |
+* ScPlayer can be redistributed and/or modified under the terms of the GNU General   |
+* Public License (Version 2).                                                        |
+*It use JUCE and OpenCV Libraries which holds GNU2                                   |
+*A copy of the license is included in the DetectO distribution, or can be found     |
+* online at www.gnu.org/licenses.                                                    |
+*=====================================================================================
 */
 
-#ifndef __MAINCOMPONENT_H_DA1A5994__
-#define __MAINCOMPONENT_H_DA1A5994__
+#ifndef __MAINCOMPONENT__
+#define __MAINCOMPONENT__
+
+#include <cv.h>
+#include <cxcore.h>
+#include <highgui.h>
 
 #include "../JuceLibraryCode/JuceHeader.h"
 
@@ -26,8 +37,15 @@ private:
     float rotation, textScrollPos;
     Draggable3DOrientation draggableOrientation;
 
-    Slider speedSlider, sizeSlider;
-    Label infoLabel;
+    // OpenCV declarations
+    CvCapture *capture;
+    IplImage  *frame;
+    int       key ;
+    char      *filename;
+    // Some specific OpenCV
+    CvHaarClassifierCascade *cascade;
+    CvMemStorage            *storage;
+
 public:
     //==============================================================================
     MainContentComponent();
@@ -93,4 +111,4 @@ private:
 };
 
 
-#endif  // __MAINCOMPONENT_H_DA1A5994__
+#endif  // __MAINCOMPONENT__

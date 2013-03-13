@@ -505,7 +505,7 @@ private:
     template <typename ElementComparator>
     struct ComparatorAdapter
     {
-        ComparatorAdapter (ElementComparator& comparator_) noexcept : comparator (comparator_) {}
+        ComparatorAdapter (ElementComparator& comp) noexcept : comparator (comp) {}
 
         int compareElements (const ValueTree* const first, const ValueTree* const second)
         {
@@ -514,7 +514,7 @@ private:
 
     private:
         ElementComparator& comparator;
-        JUCE_DECLARE_NON_COPYABLE (ComparatorAdapter);
+        JUCE_DECLARE_NON_COPYABLE (ComparatorAdapter)
     };
 
     void createListOfChildren (OwnedArray<ValueTree>&) const;

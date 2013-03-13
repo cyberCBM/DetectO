@@ -70,9 +70,7 @@ public:
                         options.escapeKeyTriggersCloseButton, true)
     {
         setUsingNativeTitleBar (options.useNativeTitleBar);
-
-        if (! JUCEApplication::isStandaloneApp())
-            setAlwaysOnTop (true); // for a plugin, make it always-on-top because the host windows are often top-level
+        setAlwaysOnTop (juce_areThereAnyAlwaysOnTopWindows());
 
         if (options.content.willDeleteObject())
             setContentOwned (options.content.release(), true);
@@ -89,7 +87,7 @@ public:
     }
 
 private:
-    JUCE_DECLARE_NON_COPYABLE (DefaultDialogWindow);
+    JUCE_DECLARE_NON_COPYABLE (DefaultDialogWindow)
 };
 
 DialogWindow::LaunchOptions::LaunchOptions() noexcept
@@ -102,11 +100,16 @@ DialogWindow::LaunchOptions::LaunchOptions() noexcept
 {
 }
 
-DialogWindow* DialogWindow::LaunchOptions::launchAsync()
+DialogWindow* DialogWindow::LaunchOptions::create()
 {
     jassert (content != nullptr); // You need to provide some kind of content for the dialog!
 
-    DefaultDialogWindow* const d = new DefaultDialogWindow (*this);
+    return new DefaultDialogWindow (*this);
+}
+
+DialogWindow* DialogWindow::LaunchOptions::launchAsync()
+{
+    DialogWindow* const d = create();
     d->enterModalState (true, nullptr, true);
     return d;
 }

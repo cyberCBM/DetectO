@@ -157,7 +157,7 @@ private:
     ModalComponentManager::Callback* callback;
     const bool isYesNo, isAsync;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (iOSMessageBox);
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (iOSMessageBox)
 };
 
 } // (juce namespace)
@@ -224,13 +224,13 @@ int JUCE_CALLTYPE NativeMessageBox::showYesNoCancelBox (AlertWindow::AlertIconTy
 //==============================================================================
 bool DragAndDropContainer::performExternalDragDropOfFiles (const StringArray& files, const bool canMoveFiles)
 {
-    jassertfalse;    // no such thing on the iphone!
+    jassertfalse;    // no such thing on iOS!
     return false;
 }
 
 bool DragAndDropContainer::performExternalDragDropOfText (const String& text)
 {
-    jassertfalse;    // no such thing on the iphone!
+    jassertfalse;    // no such thing on iOS!
     return false;
 }
 
@@ -243,6 +243,12 @@ void Desktop::setScreenSaverEnabled (const bool isEnabled)
 bool Desktop::isScreenSaverEnabled()
 {
     return ! [[UIApplication sharedApplication] isIdleTimerDisabled];
+}
+
+//==============================================================================
+bool juce_areThereAnyAlwaysOnTopWindows()
+{
+    return false;
 }
 
 //==============================================================================
@@ -289,7 +295,7 @@ void Desktop::setMousePosition (const Point<int>&)
 
 Desktop::DisplayOrientation Desktop::getCurrentOrientation() const
 {
-    return convertToJuceOrientation ([[UIApplication sharedApplication] statusBarOrientation]);
+    return Orientations::convertToJuce ([[UIApplication sharedApplication] statusBarOrientation]);
 }
 
 void Desktop::Displays::findDisplays()

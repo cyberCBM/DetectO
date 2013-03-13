@@ -819,7 +819,7 @@ private:
     const String text;
     const int insertPos;
 
-    JUCE_DECLARE_NON_COPYABLE (CodeDocumentInsertAction);
+    JUCE_DECLARE_NON_COPYABLE (CodeDocumentInsertAction)
 };
 
 void CodeDocument::insert (const String& text, const int insertPos, const bool undoable)
@@ -834,7 +834,6 @@ void CodeDocument::insert (const String& text, const int insertPos, const bool u
         {
             Position pos (*this, insertPos);
             const int firstAffectedLine = pos.getLineNumber();
-            int lastAffectedLine = firstAffectedLine + 1;
 
             CodeDocumentLine* const firstLine = lines [firstAffectedLine];
             String textInsideOriginalLine (text);
@@ -857,10 +856,7 @@ void CodeDocument::insert (const String& text, const int insertPos, const bool u
             lines.set (firstAffectedLine, newFirstLine);
 
             if (newLines.size() > 1)
-            {
                 lines.insertArray (firstAffectedLine + 1, newLines.getRawDataPointer() + 1, newLines.size() - 1);
-                lastAffectedLine = lines.size();
-            }
 
             int lineStart = newFirstLine->lineStartInFile;
             for (int i = firstAffectedLine; i < lines.size(); ++i)
@@ -918,7 +914,7 @@ private:
     const int startPos, endPos;
     const String removedText;
 
-    JUCE_DECLARE_NON_COPYABLE (CodeDocumentDeleteAction);
+    JUCE_DECLARE_NON_COPYABLE (CodeDocumentDeleteAction)
 };
 
 void CodeDocument::remove (const int startPos, const int endPos, const bool undoable)
@@ -938,7 +934,6 @@ void CodeDocument::remove (const int startPos, const int endPos, const bool undo
         maximumLineLength = -1;
         const int firstAffectedLine = startPosition.getLineNumber();
         const int endLine = endPosition.getLineNumber();
-        int lastAffectedLine = firstAffectedLine + 1;
         CodeDocumentLine& firstLine = *lines.getUnchecked (firstAffectedLine);
 
         if (firstAffectedLine == endLine)
@@ -949,8 +944,6 @@ void CodeDocument::remove (const int startPos, const int endPos, const bool undo
         }
         else
         {
-            lastAffectedLine = lines.size();
-
             CodeDocumentLine& lastLine = *lines.getUnchecked (endLine);
 
             firstLine.line = firstLine.line.substring (0, startPosition.getIndexInLine())

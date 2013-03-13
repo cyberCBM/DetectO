@@ -141,7 +141,7 @@ private:
             || status == GL_FRAMEBUFFER_COMPLETE;
     }
 
-    JUCE_DECLARE_NON_COPYABLE (Pimpl);
+    JUCE_DECLARE_NON_COPYABLE (Pimpl)
 };
 
 //==============================================================================
@@ -150,7 +150,7 @@ class OpenGLFrameBuffer::SavedState
 public:
     SavedState (OpenGLFrameBuffer& buffer, const int w, const int h)
         : width (w), height (h),
-          data (w * h)
+          data ((size_t) (w * h))
     {
         buffer.readPixels (data, Rectangle<int> (w, h));
     }
@@ -170,7 +170,7 @@ private:
     const int width, height;
     HeapBlock <PixelARGB> data;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SavedState);
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SavedState)
 };
 
 //==============================================================================

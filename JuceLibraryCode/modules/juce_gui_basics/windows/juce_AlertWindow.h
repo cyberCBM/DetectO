@@ -175,7 +175,7 @@ public:
 
         @param nameOfList   the name that was passed into the addComboBox() method
                             when creating the drop-down
-        @returns the ComboBox component, or 0 if none was found for the given name.
+        @returns the ComboBox component, or nullptr if none was found for the given name.
     */
     ComboBox* getComboBoxComponent (const String& nameOfList) const;
 
@@ -464,7 +464,7 @@ private:
 
     void updateLayout (bool onlyIncreaseSize);
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AlertWindow);
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (AlertWindow)
 };
 
 #endif   // __JUCE_ALERTWINDOW_JUCEHEADER__

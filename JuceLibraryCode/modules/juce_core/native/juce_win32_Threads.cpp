@@ -204,14 +204,19 @@ void Thread::setCurrentThreadAffinityMask (const uint32 affinityMask)
 //==============================================================================
 struct SleepEvent
 {
-    SleepEvent()
-        : handle (CreateEvent (0, 0, 0,
-                    #if JUCE_DEBUG
-                       _T("Juce Sleep Event")))
-                    #else
-                       0))
-                    #endif
+    SleepEvent() noexcept
+        : handle (CreateEvent (nullptr, FALSE, FALSE,
+                              #if JUCE_DEBUG
+                               _T("JUCE Sleep Event")))
+                              #else
+                               nullptr))
+                              #endif
+    {}
+
+    ~SleepEvent() noexcept
     {
+        CloseHandle (handle);
+        handle = 0;
     }
 
     HANDLE handle;
@@ -221,7 +226,7 @@ static SleepEvent sleepEvent;
 
 void JUCE_CALLTYPE Thread::sleep (const int millisecs)
 {
-    if (millisecs >= 10)
+    if (millisecs >= 10 || sleepEvent.handle == 0)
     {
         Sleep ((DWORD) millisecs);
     }
@@ -317,7 +322,7 @@ void Process::terminate()
     ExitProcess (0);
 }
 
-bool juce_IsRunningInWine()
+bool juce_isRunningInWine()
 {
     HMODULE ntdll = GetModuleHandleA ("ntdll");
     return ntdll != 0 && GetProcAddress (ntdll, "wine_get_version") != nullptr;
@@ -545,7 +550,7 @@ private:
     HANDLE readPipe, writePipe;
     PROCESS_INFORMATION processInfo;
 
-    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ActiveProcess);
+    JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (ActiveProcess)
 };
 
 bool ChildProcess::start (const String& command)
@@ -556,6 +561,11 @@ bool ChildProcess::start (const String& command)
         activeProcess = nullptr;
 
     return activeProcess != nullptr;
+}
+
+bool ChildProcess::start (const StringArray& args)
+{
+    return start (args.joinIntoString (" "));
 }
 
 bool ChildProcess::isRunning() const

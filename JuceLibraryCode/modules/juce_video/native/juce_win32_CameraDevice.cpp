@@ -171,9 +171,14 @@ public:
         for (int i = viewerComps.size(); --i >= 0;)
             viewerComps.getUnchecked(i)->ownerDeleted();
 
+        if (sampleGrabber != nullptr)
+        {
+            sampleGrabber->SetCallback (nullptr, 0);
+            sampleGrabber = nullptr;
+        }
+
         callback = nullptr;
         graphBuilder = nullptr;
-        sampleGrabber = nullptr;
         mediaControl = nullptr;
         filter = nullptr;
         captureGraphBuilder = nullptr;
@@ -252,7 +257,7 @@ public:
         if (imageNeedsFlipping)
         {
             const ScopedLock sl (imageSwapLock);
-            swapVariables (loadingImage, activeImage);
+            std::swap (loadingImage, activeImage);
             imageNeedsFlipping = false;
         }
 
@@ -411,12 +416,8 @@ public:
         const ScopedLock sl (listenerLock);
 
         for (int i = listeners.size(); --i >= 0;)
-        {
-            CameraDevice::Listener* const l = listeners[i];
-
-            if (l != nullptr)
+            if (CameraDevice::Listener* const l = listeners[i])
                 l->imageReceived (image);
-        }
     }
 
     //==============================================================================
@@ -681,18 +682,18 @@ private:
     class GrabberCallback   : public ComBaseClassHelperBase <ISampleGrabberCB>
     {
     public:
-        GrabberCallback (DShowCameraDeviceInteral& owner_)  : owner (owner_) {}
+        GrabberCallback (DShowCameraDeviceInteral& cam)
+            : ComBaseClassHelperBase <ISampleGrabberCB> (0), owner (cam) {}
 
         JUCE_COMRESULT QueryInterface (REFIID refId, void** result)
         {
-            if (refId == IID_ISampleGrabberCB)  { AddRef(); *result = dynamic_cast <ISampleGrabberCB*> (this); return S_OK; }
-            if (refId == IID_IUnknown)          { AddRef(); *result = dynamic_cast <IUnknown*> (this); return S_OK; }
+            if (refId == IID_ISampleGrabberCB)
+                return castToType <ISampleGrabberCB> (result);
 
-            *result = nullptr;
-            return E_NOINTERFACE;
+            return ComBaseClassHelperBase<ISampleGrabberCB>::QueryInterface (refId, result);
         }
 
-        STDMETHODIMP SampleCB (double /*SampleTime*/, IMediaSample* /*pSample*/)  { return E_FAIL; }
+        STDMETHODIMP SampleCB (double, IMediaSample*)  { return E_FAIL; }
 
         STDMETHODIMP BufferCB (double time, BYTE* buffer, long bufferSize)
         {
@@ -703,7 +704,7 @@ private:
     private:
         DShowCameraDeviceInteral& owner;
 
-        JUCE_DECLARE_NON_COPYABLE (GrabberCallback);
+        JUCE_DECLARE_NON_COPYABLE (GrabberCallback)
     };
 
     ComSmartPtr <GrabberCallback> callback;
@@ -711,13 +712,13 @@ private:
     CriticalSection listenerLock;
 
     //==============================================================================
-    JUCE_DECLARE_NON_COPYABLE (DShowCameraDeviceInteral);
+    JUCE_DECLARE_NON_COPYABLE (DShowCameraDeviceInteral)
 };
 
 
 //==============================================================================
-CameraDevice::CameraDevice (const String& name_, int /*index*/)
-    : name (name_)
+CameraDevice::CameraDevice (const String& nm, int /*index*/)
+    : name (nm)
 {
     isRecording = false;
 }
