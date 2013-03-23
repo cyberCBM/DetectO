@@ -4,11 +4,11 @@
 *Detect Any object in video or Image                                                 |
 *Email: cyber.cbm@gmail.com                                                          |
 *Github: https://github.com/cyberCBM/DetectO.git                                     |
-*License: GNU2 License, Copyright (c) 2012 by ScTeam                                 |
-* ScPlayer can be redistributed and/or modified under the terms of the GNU General   |
+*License: GNU2 License, Copyright (c) 2012 by CyberCBM                               |
+* DetectO can be redistributed and/or modified under the terms of the GNU General    |
 * Public License (Version 2).                                                        |
 *It use JUCE and OpenCV Libraries which holds GNU2                                   |
-*A copy of the license is included in the DetectO distribution, or can be found     |
+*A copy of the license is included in the DetectO distribution, or can be found      |
 * online at www.gnu.org/licenses.                                                    |
 *=====================================================================================
 */
@@ -52,6 +52,7 @@ public:
         // This is called when the app is being asked to quit: you can ignore this
         // request and let the app carry on running, or call quit() to allow the app to close.
         quit();
+
     }
 
     void anotherInstanceStarted (const String& commandLine)
