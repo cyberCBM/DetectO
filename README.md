@@ -18,6 +18,12 @@ Initialized a time ago.
 
 Send suggestions that can improve the detection or the algorithm you think should be implemented for detectO to make any object detection work.
 
+require 'C++'
+require 'Juce'
+require 'Qt'
+require 'OpenCV'
+require 'OpenGL'
+require 'dlib'
 
 ## MIT Copyright <2018> <CyberCBM>
 
