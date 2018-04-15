@@ -12,9 +12,11 @@ OpenGL: Use this graphics processing as mediator for openCV to Juce GL Image con
 
 OpenCV: Use Intelligence to capture objects from image or video.
 
+Dlib: Use intelligence to generate models for object.
+
 Initialized a time ago.
 
-Send suggestions that can improve the detection or the algorithm you think should be implemented to make this work.
+Send suggestions that can improve the detection or the algorithm you think should be implemented for detectO to make any object detection work.
 
 
 ## MIT Copyright <2018> <CyberCBM>
